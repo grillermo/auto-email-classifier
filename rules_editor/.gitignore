@@ -1,0 +1,10 @@
+/.bundle
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+!/tmp/pids/.keep
+/storage/*
+/node_modules
+/config/master.key
+/tmp/gmail_token.json

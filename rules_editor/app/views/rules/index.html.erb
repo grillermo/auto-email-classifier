@@ -1,0 +1,67 @@
+<% content_for :title, "Rules" %>
+
+<div class="mb-6 flex items-center justify-between">
+  <div>
+    <h1 class="text-2xl font-semibold">Rules</h1>
+    <p class="text-sm text-slate-600">Drag and drop active rules to update priority. Priority 1 runs first.</p>
+  </div>
+</div>
+
+<div id="rules-reorder-status" class="mb-4 hidden rounded border px-4 py-2 text-sm"></div>
+
+<div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+  <table class="min-w-full divide-y divide-slate-200 text-sm">
+    <thead class="bg-slate-50 text-left text-slate-700">
+      <tr>
+        <th class="px-4 py-3">Priority</th>
+        <th class="px-4 py-3">Name</th>
+        <th class="px-4 py-3">Conditions</th>
+        <th class="px-4 py-3">Actions</th>
+        <th class="px-4 py-3 text-right">Links</th>
+      </tr>
+    </thead>
+    <tbody id="rules-sortable" data-reorder-url="<%= reorder_rules_path %>" class="divide-y divide-slate-100">
+      <% @active_rules.each do |rule| %>
+        <tr data-rule-id="<%= rule.id %>" draggable="true" class="cursor-move bg-white transition hover:bg-sky-50">
+          <td class="px-4 py-3 font-mono"><%= rule.priority %></td>
+          <td class="px-4 py-3 font-medium text-slate-900"><%= rule.name %></td>
+          <td class="px-4 py-3 text-slate-600"><%= rule.conditions.size %></td>
+          <td class="px-4 py-3 text-slate-600"><%= rule.actions.size %></td>
+          <td class="px-4 py-3 text-right">
+            <%= link_to "Show", rule_path(rule), class: "text-sky-700 hover:underline" %>
+            <span class="px-1 text-slate-300">|</span>
+            <%= link_to "Edit", edit_rule_path(rule), class: "text-sky-700 hover:underline" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<% if @inactive_rules.any? %>
+  <h2 class="mt-8 mb-3 text-lg font-semibold">Inactive Rules</h2>
+  <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+    <table class="min-w-full divide-y divide-slate-200 text-sm">
+      <thead class="bg-slate-50 text-left text-slate-700">
+        <tr>
+          <th class="px-4 py-3">Priority</th>
+          <th class="px-4 py-3">Name</th>
+          <th class="px-4 py-3 text-right">Links</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        <% @inactive_rules.each do |rule| %>
+          <tr class="bg-slate-50">
+            <td class="px-4 py-3 font-mono text-slate-500"><%= rule.priority %></td>
+            <td class="px-4 py-3 text-slate-500"><%= rule.name %></td>
+            <td class="px-4 py-3 text-right">
+              <%= link_to "Show", rule_path(rule), class: "text-sky-700 hover:underline" %>
+              <span class="px-1 text-slate-300">|</span>
+              <%= link_to "Edit", edit_rule_path(rule), class: "text-sky-700 hover:underline" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

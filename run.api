@@ -1,0 +1,136 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+PROJECT_ROOT = File.expand_path(__dir__)
+RULES_EDITOR_ROOT = File.join(PROJECT_ROOT, "rules_editor")
+
+if Gem::Version.new(RUBY_VERSION) < Gem::Version.new("3.1")
+  abort "[supervisor] Ruby #{RUBY_VERSION} detected. Use Ruby 3.4+ (for example via rbenv) before running ./run.api."
+end
+
+ENV["BUNDLE_GEMFILE"] ||= File.join(RULES_EDITOR_ROOT, "Gemfile")
+begin
+  require "bundler/setup"
+  require File.join(RULES_EDITOR_ROOT, "config", "environment")
+rescue StandardError => e
+  abort "[supervisor] Failed to load Rails environment: #{e.message}. Run bundle install in #{RULES_EDITOR_ROOT}."
+end
+
+class Supervisor
+  def initialize
+    @children = {}
+    @threads = []
+    @shutting_down = false
+  end
+
+  def run
+    ensure_oauth!
+    start_process("rails", ["bundle", "exec", "rails", "server", "-p", ENV.fetch("PORT", "3000")], chdir: RULES_EDITOR_ROOT)
+    start_process("listener", ["bundle", "exec", "ruby", File.join(PROJECT_ROOT, "mail_listener", "listener.rb")], chdir: RULES_EDITOR_ROOT)
+
+    trap_signals
+    monitor_children
+  ensure
+    shutdown_children
+  end
+
+  private
+
+  def ensure_oauth!
+    puts "[supervisor] validating OAuth credentials"
+    Gmail::OauthManager.new.ensure_credentials!
+  rescue StandardError => e
+    abort "[supervisor] OAuth bootstrap failed: #{e.message}"
+  end
+
+  def start_process(name, command, chdir:)
+    out_read, out_write = IO.pipe
+
+    pid = Process.spawn(*command, chdir: chdir, out: out_write, err: out_write)
+    out_write.close
+
+    @children[name] = pid
+    @threads << Thread.new do
+      out_read.each_line do |line|
+        puts "[#{name}] #{line.rstrip}"
+      end
+    ensure
+      out_read.close
+    end
+
+    puts "[supervisor] started #{name} (pid=#{pid})"
+  end
+
+  def monitor_children
+    loop do
+      pid, status = Process.wait2
+      name = @children.key(pid)
+      next unless name
+
+      puts "[supervisor] process #{name} exited with status #{status.exitstatus || status.termsig}"
+      @children.delete(name)
+
+      if @shutting_down
+        break if @children.empty?
+        next
+      end
+
+      @shutting_down = true
+      shutdown_children
+      exit(status.exitstatus || 1)
+    rescue Errno::ECHILD
+      break
+    end
+
+    @threads.each(&:join)
+  end
+
+  def trap_signals
+    %w[INT TERM].each do |signal|
+      Signal.trap(signal) do
+        @shutting_down = true
+        shutdown_children
+      end
+    end
+  end
+
+  def shutdown_children
+    @children.each_value do |pid|
+      Process.kill("TERM", pid)
+    rescue Errno::ESRCH
+      nil
+    end
+
+    remaining = @children.values.dup
+    deadline = Time.now + 10
+
+    until remaining.empty? || Time.now >= deadline
+      remaining.reject! do |pid|
+        waited = Process.waitpid(pid, Process::WNOHANG)
+        !waited.nil?
+      rescue Errno::ECHILD
+        true
+      rescue Errno::ESRCH
+        true
+      rescue StandardError
+        false
+      end
+
+      sleep 0.2 unless remaining.empty?
+    end
+
+    remaining.each do |pid|
+      Process.kill("KILL", pid)
+    rescue Errno::ESRCH
+      nil
+    end
+
+    remaining.each do |pid|
+      Process.wait(pid)
+    rescue Errno::ECHILD
+      nil
+    end
+  end
+end
+
+Supervisor.new.run

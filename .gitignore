@@ -1,0 +1,9 @@
+rules_editor/.bundle
+rules_editor/log/*
+rules_editor/tmp/*
+!rules_editor/log/.keep
+!rules_editor/tmp/.keep
+rules_editor/tmp/pids/*
+!rules_editor/tmp/pids/.keep
+rules_editor/storage/*
+mail_listener/log/*
