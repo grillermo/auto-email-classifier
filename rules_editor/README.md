@@ -7,7 +7,7 @@ Rails application for managing Gmail automation rules.
 - Rules stored in PostgreSQL using JSONB (`conditions` + `actions`).
 - Priority-ordered list (`1` is highest) with drag-and-drop reordering.
 - `index`, `show`, `edit`, `update` views.
-- `Save and apply rule` action that immediately runs one rule against unread inbox messages.
+- `Save and apply rule` action that immediately runs one rule against inbox-labeled messages.
 - Tailwind-powered UI with plain JavaScript behavior (no frontend framework).
 
 ## Environment

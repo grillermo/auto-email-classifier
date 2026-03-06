@@ -2,7 +2,7 @@
 
 module Rules
   class OneOffApplier
-    DEFAULT_QUERY = "is:unread in:inbox"
+    DEFAULT_QUERY = "in:inbox"
 
     def initialize(rule:, gmail_client: Gmail::Client.new)
       @rule = rule

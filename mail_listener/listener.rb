@@ -16,7 +16,7 @@ end
 
 module MailListener
   class Runner
-    DEFAULT_QUERY = "is:unread in:inbox"
+    DEFAULT_QUERY = "in:inbox"
 
     def initialize
       @shutdown = false

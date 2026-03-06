@@ -51,7 +51,7 @@ class RulesController < ApplicationController
   private
 
   def apply_now
-    result = Rules::OneOffApplier.new(rule: @rule).apply!(query: "is:unread in:inbox")
+    result = Rules::OneOffApplier.new(rule: @rule).apply!(query: "in:inbox")
     redirect_to rule_path(@rule), notice: "Rule saved and applied (matched: #{result[:matched_count]}, applied: #{result[:applied_count]})"
   rescue StandardError => e
     redirect_to rule_path(@rule), alert: "Rule saved, but immediate apply failed: #{e.message}"
