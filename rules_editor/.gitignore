@@ -7,6 +7,8 @@
 /storage/*
 /node_modules
 /config/master.key
+/config/gmail_token.json
+/config/google_oauth_client.json
 /tmp/gmail_token.json
 *.rbc
 capybara-*.html
