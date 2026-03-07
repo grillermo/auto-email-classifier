@@ -2,8 +2,9 @@
 
 module Rules
   class RuleEngine
-    def initialize(gmail_client:)
+    def initialize(gmail_client:, dry_run: false)
       @gmail_client = gmail_client
+      @dry_run = dry_run
     end
 
     def process_message!(message:, rules_scope: Rule.active.ordered)
@@ -20,6 +21,10 @@ module Rules
 
     attr_reader :gmail_client
 
+    def dry_run?
+      @dry_run
+    end
+
     def apply_for_rule(rule:, message:)
       rule_version = rule.version_digest
       existing = RuleApplication.find_by(
@@ -28,9 +33,16 @@ module Rules
         rule_version: rule_version
       )
 
-      return { matched: true, applied: false, rule_id: rule.id, reason: "already_applied" } if existing
+      return matched_result(rule: rule, applied: false, reason: "already_applied", would_apply: false) if existing
 
-      actions = ActionExecutor.new(rule: rule, message: message, gmail_client: gmail_client).execute!
+      actions = ActionExecutor.new(
+        rule: rule,
+        message: message,
+        gmail_client: gmail_client,
+        dry_run: dry_run?
+      ).execute!
+
+      return matched_result(rule: rule, applied: false, actions: actions, dry_run: true, would_apply: true) if dry_run?
 
       RuleApplication.create!(
         gmail_message_id: message[:id],
@@ -43,9 +55,25 @@ module Rules
         applied_at: Time.current
       )
 
-      { matched: true, applied: true, rule_id: rule.id, actions: actions }
+      matched_result(rule: rule, applied: true, actions: actions)
     rescue ActiveRecord::RecordNotUnique
-      { matched: true, applied: false, rule_id: rule.id, reason: "already_applied" }
+      matched_result(rule: rule, applied: false, reason: "already_applied", would_apply: false)
+    end
+
+    def matched_result(rule:, applied:, actions: nil, reason: nil, dry_run: dry_run?, would_apply: nil)
+      result = {
+        matched: true,
+        applied: applied,
+        rule_id: rule.id,
+        rule_name: rule.name
+      }
+      result[:actions] = actions unless actions.nil?
+      result[:reason] = reason if reason
+      return result unless dry_run
+
+      result[:dry_run] = true
+      result[:would_apply] = would_apply unless would_apply.nil?
+      result
     end
   end
 end

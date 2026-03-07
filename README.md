@@ -39,6 +39,8 @@ cd /Users/grillermo/c/email-classifier
 ./run.api
 ```
 
+To preview listener behavior without mutating Gmail or recording applied rules, run `./run.api --dry-run`.
+
 ## Import existing Apple Mail rules
 
 ```bash

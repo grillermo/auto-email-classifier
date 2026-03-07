@@ -4,9 +4,10 @@ module Rules
   class ForwardedRuleProcessor
     DEFAULT_FORWARD_QUERY = 'is:unread in:inbox from:me (subject:"Fwd:" OR subject:"FW:")'
 
-    def initialize(gmail_client: Gmail::Client.new)
+    def initialize(gmail_client: Gmail::Client.new, parser: ForwardedContentParser.new, dry_run: false)
       @gmail_client = gmail_client
-      @parser = ForwardedContentParser.new
+      @parser = parser
+      @dry_run = dry_run
     end
 
     def process!
@@ -23,11 +24,24 @@ module Rules
         forwarded_data = parser.parse(message[:body])
 
         unless forwarded_data
-          gmail_client.mark_message_read(message_id)
+          if dry_run?
+            log_dry_run("message=#{message_id} would mark forwarded email as read because it could not be parsed")
+          else
+            gmail_client.mark_message_read(message_id)
+          end
           next
         end
 
         rule = build_rule_from_forwarded_data(forwarded_data, source_message_id: message_id)
+
+        if dry_run?
+          log_dry_run("message=#{message_id} would create inactive rule name=#{rule.name.inspect} priority=#{rule.priority} actions=#{format_actions(rule.actions)}")
+          log_dry_run("message=#{message_id} would send confirmation email to=#{owner_email.inspect}")
+          log_dry_run("message=#{message_id} would mark forwarded email as read")
+          created += 1
+          next
+        end
+
         rule.save!
 
         notification_gmail_message_id = nil
@@ -56,6 +70,10 @@ module Rules
     private
 
     attr_reader :gmail_client, :parser
+
+    def dry_run?
+      @dry_run
+    end
 
     def forward_query
       ENV.fetch("AUTO_RULE_FORWARD_QUERY", DEFAULT_FORWARD_QUERY)
@@ -116,6 +134,17 @@ module Rules
 
     def base_url
       ENV.fetch("APP_BASE_URL", "http://localhost:3000")
+    end
+
+    def log_dry_run(message)
+      puts "[listener] dry-run auto-rule #{message}"
+    end
+
+    def format_actions(actions)
+      Array(actions).map do |action|
+        label = action[:label]
+        label ? "#{action[:type]}(#{label})" : action[:type]
+      end.join(",")
     end
   end
 end
