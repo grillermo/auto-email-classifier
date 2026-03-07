@@ -29,7 +29,9 @@ The app loads environment variables from `rules_editor/.env` automatically via `
 ```bash
 cd /Users/grillermo/c/email-classifier/rules_editor
 bundle install
+npm install
 bundle exec rails db:create db:migrate
+npm run build
 ```
 
 4. Start everything:
@@ -40,6 +42,30 @@ cd /Users/grillermo/c/email-classifier
 ```
 
 To preview listener behavior without mutating Gmail or recording applied rules, run `./run.api --dry-run`.
+
+## Run only rules_editor (Rails + JS watcher)
+
+```bash
+cd /Users/grillermo/c/email-classifier/rules_editor
+gem install foreman
+bin/dev
+```
+
+`bin/dev` runs the Rails server and `esbuild` in watch mode.
+
+## Build frontend assets
+
+```bash
+cd /Users/grillermo/c/email-classifier/rules_editor
+npm run build
+```
+
+For production deploys, also precompile Rails assets:
+
+```bash
+cd /Users/grillermo/c/email-classifier/rules_editor
+RAILS_ENV=production bundle exec rails assets:precompile
+```
 
 ## Import existing Apple Mail rules
 
@@ -58,7 +84,7 @@ bundle exec ruby import_from_mail_app.rb /Users/grillermo/c/email-classifier/Syn
   - Gmail OAuth + REST client in [oauth_manager.rb](/Users/grillermo/c/email-classifier/rules_editor/app/services/gmail/oauth_manager.rb:1) and [client.rb](/Users/grillermo/c/email-classifier/rules_editor/app/services/gmail/client.rb:1)
   - Rule engine + matcher + actions + forwarded auto-rule flow in [rule_engine.rb](/Users/grillermo/c/email-classifier/rules_editor/app/services/rules/rule_engine.rb:1) and [forwarded_rule_processor.rb](/Users/grillermo/c/email-classifier/rules_editor/app/services/rules/forwarded_rule_processor.rb:1)
   - Apple Mail importer in [import_from_mail_app.rb](/Users/grillermo/c/email-classifier/rules_editor/import_from_mail_app.rb:1)
-  - Tailwind-based UI + plain JS drag/drop reorder and dynamic edit form in [index.html.erb](/Users/grillermo/c/email-classifier/rules_editor/app/views/rules/index.html.erb:1), [edit.html.erb](/Users/grillermo/c/email-classifier/rules_editor/app/views/rules/edit.html.erb:1), [rules_index.js](/Users/grillermo/c/email-classifier/rules_editor/app/javascript/rules_index.js:1), [rules_form.js](/Users/grillermo/c/email-classifier/rules_editor/app/javascript/rules_form.js:1)
+  - Tailwind-based UI + Inertia React rules index reorder page and dynamic edit form in [rules_controller.rb](/Users/grillermo/c/email-classifier/rules_editor/app/controllers/rules_controller.rb:1), [Index.jsx](/Users/grillermo/c/email-classifier/rules_editor/app/javascript/pages/Rules/Index.jsx:1), [inertia.jsx](/Users/grillermo/c/email-classifier/rules_editor/app/javascript/inertia.jsx:1), and [rules_form.js](/Users/grillermo/c/email-classifier/rules_editor/app/javascript/rules_form.js:1)
 - Applied your requested cleanup changes:
   - Replaced manual `.env` parsing with `bkeepers/dotenv`:
     - Gem changed to `dotenv` in [Gemfile](/Users/grillermo/c/email-classifier/rules_editor/Gemfile:17)

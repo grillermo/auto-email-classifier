@@ -4,8 +4,14 @@ class RulesController < ApplicationController
   before_action :set_rule, only: %i[show edit update]
 
   def index
-    @active_rules = Rule.active.ordered
-    @inactive_rules = Rule.where(active: false).ordered
+    active_rules = Rule.active.ordered
+    inactive_rules = Rule.where(active: false).ordered
+
+    render inertia: "Rules/Index", props: {
+      activeRules: serialize_rules(active_rules),
+      inactiveRules: serialize_rules(inactive_rules),
+      reorderUrl: reorder_rules_path
+    }
   end
 
   def show; end
@@ -92,5 +98,19 @@ class RulesController < ApplicationController
 
   def valid_reorder_payload?(ordered_ids, active_ids)
     ordered_ids.length == active_ids.length && ordered_ids.sort == active_ids.sort
+  end
+
+  def serialize_rules(rules)
+    rules.map do |rule|
+      {
+        id: rule.id.to_s,
+        name: rule.name,
+        priority: rule.priority,
+        conditionsCount: rule.conditions.size,
+        actionsCount: rule.actions.size,
+        showUrl: rule_path(rule),
+        editUrl: edit_rule_path(rule)
+      }
+    end
   end
 end

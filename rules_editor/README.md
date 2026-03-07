@@ -8,7 +8,7 @@ Rails application for managing Gmail automation rules.
 - Priority-ordered list (`1` is highest) with drag-and-drop reordering.
 - `index`, `show`, `edit`, `update` views.
 - `Save and apply rule` action that immediately runs one rule against inbox-labeled messages.
-- Tailwind-powered UI with plain JavaScript behavior (no frontend framework).
+- Tailwind-powered UI with Inertia + React on the rules index page.
 
 ## Environment
 
@@ -35,7 +35,26 @@ bundle exec rails db:create
 bundle exec rails db:migrate
 ```
 
-## Run only Rails app
+## Install JavaScript dependencies
+
+```bash
+npm install
+```
+
+## Build JavaScript assets
+
+```bash
+npm run build
+```
+
+## Run in development (Rails + JS watcher)
+
+```bash
+gem install foreman
+bin/dev
+```
+
+## Run only Rails app (requires a prior `npm run build`)
 
 ```bash
 bundle exec rails server -p 3000

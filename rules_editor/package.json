@@ -1,0 +1,16 @@
+{
+  "name": "app",
+  "private": true,
+  "scripts": {
+    "build": "esbuild app/javascript/application.js --bundle --sourcemap --format=esm --jsx=automatic --outdir=app/assets/builds --public-path=/assets",
+    "build:watch": "npm run build -- --watch"
+  },
+  "dependencies": {
+    "@inertiajs/react": "^2.3.17",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.3"
+  }
+}

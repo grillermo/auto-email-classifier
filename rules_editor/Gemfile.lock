@@ -140,10 +140,8 @@ GEM
       signet (>= 0.16, < 2.a)
     i18n (1.14.8)
       concurrent-ruby (~> 1.0)
-    importmap-rails (2.2.3)
-      actionpack (>= 6.0.0)
-      activesupport (>= 6.0.0)
-      railties (>= 6.0.0)
+    inertia_rails (3.17.0)
+      railties (>= 6)
     io-console (0.8.2)
     irb (1.17.0)
       pp (>= 0.6.0)
@@ -153,6 +151,8 @@ GEM
     jbuilder (2.14.1)
       actionview (>= 7.0.0)
       activesupport (>= 7.0.0)
+    jsbundling-rails (1.3.1)
+      railties (>= 6.0.0)
     json (2.18.1)
     jwt (3.1.2)
       base64
@@ -347,10 +347,11 @@ DEPENDENCIES
   bundler-audit
   debug
   dotenv
-  google-apis-gmail_v1 (~> 0.47)
-  googleauth (~> 1.9)
-  importmap-rails
+  google-apis-gmail_v1
+  googleauth
+  inertia_rails (~> 3.17)
   jbuilder
+  jsbundling-rails (~> 1.3)
   pg (~> 1.1)
   propshaft
   pstore
@@ -408,10 +409,11 @@ CHECKSUMS
   google-logging-utils (0.2.0) sha256=675462b4ea5affa825a3442694ca2d75d0069455a1d0956127207498fca3df7b
   googleauth (1.16.2) sha256=15009502e2e38af71948cda918f230e27d327f6882a1e47967a5a4664930a638
   i18n (1.14.8) sha256=285778639134865c5e0f6269e0b818256017e8cde89993fdfcbfb64d088824a5
-  importmap-rails (2.2.3) sha256=7101be2a4dc97cf1558fb8f573a718404c5f6bcfe94f304bf1f39e444feeb16a
+  inertia_rails (3.17.0) sha256=67d8975904f96fd924ec279eeda0bdeb2958afcc2b6b456123e00b52d617e35c
   io-console (0.8.2) sha256=d6e3ae7a7cc7574f4b8893b4fca2162e57a825b223a177b7afa236c5ef9814cc
   irb (1.17.0) sha256=168c4ddb93d8a361a045c41d92b2952c7a118fa73f23fe14e55609eb7a863aae
   jbuilder (2.14.1) sha256=4eb26376ff60ef100cb4fd6fd7533cd271f9998327e86adf20fd8c0e69fabb42
+  jsbundling-rails (1.3.1) sha256=0fa03f6d051c694cbf55a022d8be53399879f2c4cf38b2968f86379c62b1c2ca
   json (2.18.1) sha256=fe112755501b8d0466b5ada6cf50c8c3f41e897fa128ac5d263ec09eedc9f986
   jwt (3.1.2) sha256=af6991f19a6bb4060d618d9add7a66f0eeb005ac0bc017cd01f63b42e122d535
   language_server-protocol (3.17.0.5) sha256=fd1e39a51a28bf3eec959379985a72e296e9f9acfce46f6a79d31ca8760803cc
