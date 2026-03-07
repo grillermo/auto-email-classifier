@@ -12,7 +12,7 @@ gem "puma", ">= 5.0"
 gem "importmap-rails"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
-gem "google-apis-gmail_v1", "~> 0.55"
+gem "google-apis-gmail_v1", "~> 0.47"
 gem "googleauth", "~> 1.9"
 gem "dotenv"
 gem "tailwindcss-rails"
