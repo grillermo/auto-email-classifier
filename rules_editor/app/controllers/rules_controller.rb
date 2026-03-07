@@ -48,6 +48,16 @@ class RulesController < ApplicationController
     render json: { ok: true }
   end
 
+  def appy_all
+    result = Rules::ListenerCycle.new(dry_run: ActiveModel::Type::Boolean.new.cast(params[:dry_run])).run!
+    render json: result
+  rescue StandardError => e
+    render json: {
+      ok: false,
+      error: e.message
+    }, status: :unprocessable_entity
+  end
+
   private
 
   def apply_now
