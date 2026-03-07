@@ -12,10 +12,11 @@ gem "puma", ">= 5.0"
 gem "importmap-rails"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
-gem "google-apis-gmail_v1", "~> 0.47"
-gem "googleauth", "~> 1.9"
+gem "google-apis-gmail_v1"
+gem "googleauth"
 gem "dotenv"
 gem "tailwindcss-rails"
+gem "pstore"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"

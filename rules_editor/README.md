@@ -22,6 +22,8 @@ cp .env.example .env
 
 Environment values are loaded automatically with `bkeepers/dotenv`.
 
+Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env` using the same Desktop OAuth client you use for the scripts in `/Users/grillermo/c/email-classifier/example`. The app stores the Gmail modify token in `~/.credentials/gmail-modify-token.yaml` unless `GOOGLE_OAUTH_TOKEN_PATH` overrides it.
+
 ## OAuth Setup
 
 See [docs/oauth_setup.md](/Users/grillermo/c/email-classifier/rules_editor/docs/oauth_setup.md).

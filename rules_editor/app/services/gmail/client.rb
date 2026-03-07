@@ -2,9 +2,18 @@
 
 require "base64"
 require "google/apis/gmail_v1"
+require "googleauth"
+require "googleauth/stores/file_token_store"
 
 module Gmail
   class Client
+    APPLICATION_NAME = "Email Rule Automation"
+    CREDENTIALS_DIR = File.join(Dir.home, ".credentials")
+    DEFAULT_TOKEN_PATH = File.join(CREDENTIALS_DIR, "gmail-modify-token.yaml")
+    AUTHORIZATION_USER_ID = "default"
+    MAX_RESULTS_LIMIT = 500
+    SCOPE = Google::Apis::GmailV1::AUTH_GMAIL_MODIFY
+
     SYSTEM_LABELS = %w[
       INBOX
       SPAM
@@ -21,11 +30,12 @@ module Gmail
       CATEGORY_FORUMS
     ].freeze
 
-    def initialize(credentials: OauthManager.new.ensure_credentials!, user_id: "me")
+    def initialize(user_id: "me", token_path: DEFAULT_TOKEN_PATH)
       @user_id = user_id
+      @token_path = token_path
       @service = Google::Apis::GmailV1::GmailService.new
-      @service.client_options.application_name = "Email Rule Automation"
-      @service.authorization = credentials
+      @service.client_options.application_name = APPLICATION_NAME
+      @service.authorization = authorize
       @label_name_to_id = nil
     end
 
@@ -34,8 +44,30 @@ module Gmail
     end
 
     def list_message_ids(query:, max_results: 100)
-      response = service.list_user_messages(user_id, q: query, max_results: max_results)
-      Array(response.messages).map(&:id)
+      messages = []
+      page_token = nil
+
+      loop do
+        remaining = max_results - messages.size
+        page_size = [remaining, MAX_RESULTS_LIMIT].min
+        break if page_size <= 0
+
+        response = service.list_user_messages(
+          user_id,
+          q: query,
+          max_results: page_size,
+          page_token: page_token
+        )
+
+        break if response.messages.nil? || response.messages.empty?
+
+        messages.concat(response.messages)
+        break if messages.size >= max_results || response.next_page_token.nil?
+
+        page_token = response.next_page_token
+      end
+
+      messages.take(max_results).map(&:id)
     end
 
     def fetch_message(message_id)
@@ -44,14 +76,18 @@ module Gmail
 
     def fetch_normalized_message(message_id)
       message = fetch_message(message_id)
+      headers = message.payload&.headers || []
 
       {
         id: message.id,
         thread_id: message.thread_id,
-        from: header_value(message, "From"),
-        subject: header_value(message, "Subject"),
-        body: extract_body(message.payload),
-        label_ids: Array(message.label_ids),
+        date: find_header(headers, "Date"),
+        from: find_header(headers, "From"),
+        to: find_header(headers, "To"),
+        subject: find_header(headers, "Subject"),
+        snippet: message.snippet,
+        body: extract_best_body(message.payload),
+        label_ids: message.label_ids || [],
         raw: message
       }
     end
@@ -109,7 +145,36 @@ module Gmail
 
     private
 
-    attr_reader :service, :user_id
+    attr_reader :service, :token_path, :user_id
+
+    def authorize
+      validate_environment
+      validate_credentials
+
+      client_id = Google::Auth::ClientId.new(
+        ENV.fetch("GOOGLE_CLIENT_ID", nil),
+        ENV.fetch("GOOGLE_CLIENT_SECRET", nil)
+      )
+
+      token_store = Google::Auth::Stores::FileTokenStore.new(file: token_path)
+      authorizer = Google::Auth::UserAuthorizer.new(client_id, SCOPE, token_store)
+      credentials = authorizer.get_credentials(AUTHORIZATION_USER_ID)
+
+      raise "No credentials found. Please run ./run.api first to authenticate." if credentials.nil?
+
+      credentials
+    end
+
+    def validate_environment
+      raise "GOOGLE_CLIENT_ID is not set" if ENV["GOOGLE_CLIENT_ID"].to_s.strip.empty?
+      raise "GOOGLE_CLIENT_SECRET is not set" if ENV["GOOGLE_CLIENT_SECRET"].to_s.strip.empty?
+    end
+
+    def validate_credentials
+      return if File.exist?(token_path)
+
+      raise "No credentials found. Please run ./run.api first to authenticate."
+    end
 
     def label_name_to_id
       @label_name_to_id ||= begin
@@ -118,44 +183,61 @@ module Gmail
       end
     end
 
-    def header_value(message, name)
-      headers = Array(message.payload&.headers)
-      found = headers.find { |header| header.name.to_s.casecmp(name).zero? }
-      found&.value.to_s
+    def find_header(headers, name)
+      headers.find { |header| header.name.casecmp?(name) }&.value
     end
 
-    def extract_body(payload)
+    def extract_best_body(payload)
+      plain_text = extract_body_with_encoding(payload, "text/plain")
+      return plain_text unless plain_text.empty?
+
+      html = extract_body_with_encoding(payload, "text/html")
+      return strip_html(html) unless html.empty?
+
+      ""
+    end
+
+    def extract_body_with_encoding(payload, mime_type)
       return "" if payload.nil?
 
-      plain_parts = extract_parts(payload, "text/plain")
-      html_parts = extract_parts(payload, "text/html")
+      if payload.mime_type == mime_type && payload.body&.data
+        return decode_body_with_encoding(payload.body.data, payload.headers)
+      end
 
-      return plain_parts.join("\n\n") unless plain_parts.empty?
-      return strip_html(html_parts.join("\n\n")) unless html_parts.empty?
+      Array(payload.parts).each do |part|
+        if part.mime_type == mime_type && part.body&.data
+          return decode_body_with_encoding(part.body.data, part.headers)
+        end
+
+        result = extract_body_with_encoding(part, mime_type)
+        return result unless result.empty?
+      end
 
       ""
     end
 
-    def extract_parts(part, mime_type)
-      parts = []
+    def decode_body_with_encoding(encoded_data, headers)
+      return "" if encoded_data.nil? || encoded_data.empty?
 
-      if part.mime_type == mime_type && part.body&.data
-        parts << decode_body_data(part.body.data)
+      content_type = find_header(headers || [], "Content-Type")
+      charset = extract_charset(content_type) || "UTF-8"
+
+      decoded = begin
+        Base64.urlsafe_decode64(encoded_data)
+      rescue ArgumentError
+        encoded_data.dup
       end
 
-      Array(part.parts).each do |child|
-        parts.concat(extract_parts(child, mime_type))
-      end
-
-      parts
+      decoded.encode("UTF-8", charset, invalid: :replace, undef: :replace)
+    rescue Encoding::InvalidByteSequenceError, Encoding::UndefinedConversionError
+      decoded.force_encoding("UTF-8")
     end
 
-    def decode_body_data(data)
-      return "" if data.nil?
+    def extract_charset(content_type)
+      return nil if content_type.nil?
 
-      Base64.urlsafe_decode64(data + ("=" * ((4 - data.length % 4) % 4)))
-    rescue ArgumentError
-      ""
+      match = content_type.match(/charset=["']?([^"';\s]+)["']?/i)
+      match&.[](1)
     end
 
     def strip_html(content)
