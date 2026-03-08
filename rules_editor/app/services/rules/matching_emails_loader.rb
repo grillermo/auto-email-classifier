@@ -90,7 +90,8 @@ module Rules
         subject: metadata[:subject].presence || "(subject unavailable)",
         from: metadata[:from].presence || "(sender unavailable)",
         date: formatted_date(metadata[:date], fallback: application.applied_at),
-        gmail_url: gmail_url_for(application.gmail_message_id, thread_id: metadata[:thread_id])
+        gmail_url: gmail_url_for(application.gmail_message_id, thread_id: metadata[:thread_id]),
+        email_id: application.gmail_message_id,
       }
     end
 

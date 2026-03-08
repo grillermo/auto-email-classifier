@@ -139,6 +139,7 @@ export default function RulesIndex({ activeRules, inactiveRules, reorderUrl }) {
               <th className="px-4 py-3">Conditions</th>
               <th className="px-4 py-3">Actions</th>
               <th className="px-4 py-3 text-right">Links</th>
+              <th className="px-4 py-3 text-right">Applications</th>
             </tr>
           </thead>
           <tbody
@@ -170,6 +171,7 @@ export default function RulesIndex({ activeRules, inactiveRules, reorderUrl }) {
                     Edit
                   </a>
                 </td>
+                <td className="px-4 py-3 text-slate-600">{rule.applicationsCount}</td>
               </tr>
             ))}
           </tbody>

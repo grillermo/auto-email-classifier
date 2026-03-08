@@ -4,8 +4,8 @@ class RulesController < ApplicationController
   before_action :set_rule, only: %i[show edit update]
 
   def index
-    active_rules = Rule.active.ordered
-    inactive_rules = Rule.where(active: false).ordered
+    active_rules = Rule.active.ordered.preload(:rule_applications)
+    inactive_rules = Rule.where(active: false).ordered.preload(:rule_applications)
 
     render inertia: "Rules/Index", props: {
       activeRules: serialize_rules(active_rules),
@@ -105,7 +105,8 @@ class RulesController < ApplicationController
         conditionsCount: rule.conditions.size,
         actionsCount: rule.actions.size,
         showUrl: rule_path(rule),
-        editUrl: edit_rule_path(rule)
+        editUrl: edit_rule_path(rule),
+        applicationsCount: rule.rule_applications.size
       }
     end
   end

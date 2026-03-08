@@ -81,7 +81,7 @@
               <td class="px-4 py-3 text-slate-700"><%= email[:from] %></td>
               <td class="whitespace-nowrap px-4 py-3 text-slate-700"><%= email[:date] %></td>
               <td class="px-4 py-3 text-right">
-                <%= link_to "Open in Gmail", email[:gmail_url], target: "_blank", rel: "noopener noreferrer", class: "text-sky-700 hover:underline" %>
+                <%= link_to "Open in Gmail #{email[:email_id]}", email[:gmail_url], target: "_blank", rel: "noopener noreferrer", class: "text-sky-700 hover:underline" %>
               </td>
             </tr>
           <% end %>
