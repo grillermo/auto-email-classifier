@@ -8,7 +8,7 @@ require "uri"
 require_relative "config/environment"
 
 class MailAppImporter
-  SYSTEM_LABEL_TARGETS = ["[Gmail]/All Mail"].freeze
+  ALL_EMAIL_MAILBOX = ["[Gmail]/All Mail"].freeze
 
   def initialize(plist_path)
     @plist_path = File.expand_path(plist_path)
@@ -44,7 +44,7 @@ class MailAppImporter
         metadata: transformed[:metadata]
       )
 
-      rule.save!
+      # rule.save!
 
       next_priority += 1 if rule.previous_changes.key?("id")
       imported += 1
@@ -72,7 +72,7 @@ class MailAppImporter
   end
 
   def transform_rule(raw_rule)
-    actions, skipped_mailboxes = build_actions(raw_rule)
+    actions = build_actions(raw_rule)
 
     {
       name: raw_rule.fetch("RuleName", "Imported Rule"),
@@ -93,7 +93,6 @@ class MailAppImporter
           mailbox_url: raw_rule["MailboxURL"],
           copy_to_mailbox_url: raw_rule["CopyToMailboxURL"]
         },
-        skipped_mailbox_targets: skipped_mailboxes
       }
     }
   end
@@ -117,30 +116,26 @@ class MailAppImporter
 
   def build_actions(raw_rule)
     actions = []
-    skipped_mailboxes = []
 
     actions << { type: "trash" } if raw_rule["Deletes"]
     actions << { type: "mark_read" } if raw_rule["MarkRead"]
 
+    label = label_from_mailbox_url(raw_rule["CopyToMailboxURL"])
+
     if raw_rule["ShouldTransferMessage"]
-      label = label_from_mailbox_url(raw_rule["MailboxURL"])
-      if label
-        actions << { type: "add_label", label: label }
-      else
-        skipped_mailboxes << raw_rule["MailboxURL"]
-      end
+      actions << { type: "remove_label", label: 'INBOX' }
+
+      actions << { type: "add_label", label: label }
+    elsif raw_rule["ShouldCopyMessage"]
+      actions << { type: "add_label", label: label }
     end
 
-    if raw_rule["ShouldCopyMessage"]
-      label = label_from_mailbox_url(raw_rule["CopyToMailboxURL"])
-      if label
-        actions << { type: "add_label", label: label }
-      else
-        skipped_mailboxes << raw_rule["CopyToMailboxURL"]
-      end
-    end
+    puts "actions",actions
+    puts "raw_rule",raw_rule
+    puts "\n"
+    puts "\n"
 
-    [actions, skipped_mailboxes.compact]
+    actions
   end
 
   def label_from_mailbox_url(mailbox_url)
@@ -150,7 +145,6 @@ class MailAppImporter
     decoded_path = URI.decode_www_form_component(uri.path.to_s.sub(%r{^/}, ""))
     decoded_path = decoded_path.gsub(%r{\A/+}, "")
     return nil if decoded_path.empty?
-    return nil if SYSTEM_LABEL_TARGETS.include?(decoded_path)
 
     decoded_path
   rescue URI::InvalidURIError
