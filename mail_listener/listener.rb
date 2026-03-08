@@ -33,8 +33,6 @@ end
 
 module MailListener
   class Runner
-    DEFAULT_QUERY = "in:inbox"
-
     def initialize(dry_run: false)
       @shutdown = false
       @dry_run = dry_run
@@ -67,61 +65,13 @@ module MailListener
     end
 
     def process_cycle
-      gmail_client = Gmail::Client.new
-      forward_result = Rules::ForwardedRuleProcessor.new(gmail_client: gmail_client, dry_run: dry_run?).process!
-
-      rules = Rule.active.ordered.to_a
-      message_ids = gmail_client.list_message_ids(query: primary_query, max_results: 500)
-
-      puts "[listener] cycle: mode=#{dry_run? ? "dry-run" : "live"}, messages=#{message_ids.length}, active_rules=#{rules.length}, auto_created=#{forward_result[:created]}"
-
-      engine = Rules::RuleEngine.new(gmail_client: gmail_client, dry_run: dry_run?)
-
-      message_ids.each do |message_id|
-        message = gmail_client.fetch_normalized_message(message_id)
-        result = engine.process_message!(message: message, rules_scope: rules)
-
-        next unless result[:matched]
-
-        log_rule_result(message_id: message_id, result: result)
-      end
-    rescue StandardError => e
-      puts "[listener] cycle failed: #{e.class} #{e.message}"
-      puts e.backtrace.first(5).join("\n")
-    end
-
-    def primary_query
-      ENV.fetch("GMAIL_PRIMARY_QUERY", DEFAULT_QUERY)
+      MailListener::CycleProcessor.new(dry_run: dry_run?).process!
     end
 
     def install_signal_handlers
       %w[INT TERM].each do |signal|
         Signal.trap(signal) { @shutdown = true }
       end
-    end
-
-    def log_rule_result(message_id:, result:)
-      parts = ["[listener] message=#{message_id}", "matched", "rule=#{result[:rule_id]}"]
-      parts << "name=#{result[:rule_name].inspect}" if result[:rule_name]
-
-      if result[:dry_run]
-        parts << "dry_run=true"
-        parts << "would_apply=#{result[:would_apply]}"
-      else
-        parts << "applied=#{result[:applied]}"
-      end
-
-      parts << "reason=#{result[:reason]}" if result[:reason]
-      parts << "actions=#{format_actions(result[:actions])}" unless Array(result[:actions]).empty?
-
-      puts parts.join(" ")
-    end
-
-    def format_actions(actions)
-      Array(actions).map do |action|
-        label = action[:label]
-        label ? "#{action[:type]}(#{label})" : action[:type]
-      end.join(",")
     end
   end
 end
