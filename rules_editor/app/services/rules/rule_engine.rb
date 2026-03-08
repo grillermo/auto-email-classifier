@@ -50,7 +50,8 @@ module Rules
         rule_version: rule_version,
         result: {
           matched_by: rule.definition["conditions"],
-          actions: actions
+          actions: actions,
+          message: message_snapshot(message)
         },
         applied_at: Time.current
       )
@@ -74,6 +75,16 @@ module Rules
       result[:dry_run] = true
       result[:would_apply] = would_apply unless would_apply.nil?
       result
+    end
+
+    def message_snapshot(message)
+      {
+        id: message[:id],
+        thread_id: message[:thread_id],
+        date: message[:date],
+        from: message[:from],
+        subject: message[:subject]
+      }.compact
     end
   end
 end

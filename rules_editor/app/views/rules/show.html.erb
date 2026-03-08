@@ -48,3 +48,47 @@
   <h2 class="mb-2 text-lg font-semibold">Metadata</h2>
   <pre class="overflow-x-auto rounded bg-slate-900 p-3 text-xs text-slate-100"><%= JSON.pretty_generate(@rule.metadata) %></pre>
 </section>
+
+<section class="mt-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+  <div class="mb-3 flex items-center justify-between">
+    <h2 class="text-lg font-semibold">Matched Emails (<%= @matching_emails_total_count %>)</h2>
+    <% if @matching_emails_truncated %>
+      <p class="text-xs text-slate-500">Showing the most recent <%= @matching_emails.length %> matches.</p>
+    <% end %>
+  </div>
+
+  <% if @matching_emails_error.present? %>
+    <p class="mb-3 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+      Some email details could not be loaded from Gmail: <%= @matching_emails_error %>
+    </p>
+  <% end %>
+
+  <% if @matching_emails.any? %>
+    <div class="overflow-x-auto rounded border border-slate-200">
+      <table class="min-w-full divide-y divide-slate-200 text-sm">
+        <thead class="bg-slate-50 text-left text-slate-700">
+          <tr>
+            <th class="px-4 py-3">Subject</th>
+            <th class="px-4 py-3">From</th>
+            <th class="px-4 py-3">Date</th>
+            <th class="px-4 py-3 text-right">Details</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 bg-white">
+          <% @matching_emails.each do |email| %>
+            <tr>
+              <td class="px-4 py-3 text-slate-900"><%= email[:subject] %></td>
+              <td class="px-4 py-3 text-slate-700"><%= email[:from] %></td>
+              <td class="whitespace-nowrap px-4 py-3 text-slate-700"><%= email[:date] %></td>
+              <td class="px-4 py-3 text-right">
+                <%= link_to "Open in Gmail", email[:gmail_url], target: "_blank", rel: "noopener noreferrer", class: "text-sky-700 hover:underline" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="text-sm text-slate-600">No emails have matched this rule yet.</p>
+  <% end %>
+</section>

@@ -14,7 +14,13 @@ class RulesController < ApplicationController
     }
   end
 
-  def show; end
+  def show
+    matching_emails = Rules::MatchingEmailsLoader.new(rule: @rule).load
+    @matching_emails = matching_emails.fetch(:emails)
+    @matching_emails_total_count = matching_emails.fetch(:total_count)
+    @matching_emails_truncated = matching_emails.fetch(:truncated)
+    @matching_emails_error = matching_emails.fetch(:error)
+  end
 
   def edit
     @definition = @rule.definition.with_indifferent_access
@@ -52,16 +58,6 @@ class RulesController < ApplicationController
     end
 
     render json: { ok: true }
-  end
-
-  def appy_all
-    result = Rules::ListenerCycle.new(dry_run: ActiveModel::Type::Boolean.new.cast(params[:dry_run])).run!
-    render json: result
-  rescue StandardError => e
-    render json: {
-      ok: false,
-      error: e.message
-    }, status: :unprocessable_entity
   end
 
   private
