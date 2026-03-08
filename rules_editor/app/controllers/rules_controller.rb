@@ -23,7 +23,7 @@ class RulesController < ApplicationController
   end
 
   def edit
-    @definition = @rule.definition.with_indifferent_access
+    render inertia: "Rules/Edit", props: edit_props(@rule)
   end
 
   def update
@@ -33,11 +33,9 @@ class RulesController < ApplicationController
     if @rule.save
       return apply_now if save_and_apply?
 
-      redirect_to rule_path(@rule), notice: "Rule saved"
+      redirect_to_rule_with_flash(notice: "Rule saved")
     else
-      @definition = @rule.definition.with_indifferent_access
-      flash.now[:alert] = @rule.errors.full_messages.to_sentence
-      render :edit, status: :unprocessable_entity
+      render inertia: "Rules/Edit", props: edit_props(@rule, error_messages: @rule.errors.full_messages), status: :unprocessable_entity
     end
   end
 
@@ -64,9 +62,11 @@ class RulesController < ApplicationController
 
   def apply_now
     result = Rules::OneOffApplier.new(rule: @rule).apply!(query: "in:inbox")
-    redirect_to rule_path(@rule), notice: "Rule saved and applied (matched: #{result[:matched_count]}, applied: #{result[:applied_count]})"
+    redirect_to_rule_with_flash(
+      notice: "Rule saved and applied (matched: #{result[:matched_count]}, applied: #{result[:applied_count]})"
+    )
   rescue StandardError => e
-    redirect_to rule_path(@rule), alert: "Rule saved, but immediate apply failed: #{e.message}"
+    redirect_to_rule_with_flash(alert: "Rule saved, but immediate apply failed: #{e.message}")
   end
 
   def permitted_rule_attributes
@@ -92,6 +92,15 @@ class RulesController < ApplicationController
     params[:commit_action] == "save_and_apply"
   end
 
+  def redirect_to_rule_with_flash(notice: nil, alert: nil)
+    flash[:notice] = notice if notice
+    flash[:alert] = alert if alert
+
+    return inertia_location(rule_path(@rule)) if request.inertia?
+
+    redirect_to rule_path(@rule)
+  end
+
   def valid_reorder_payload?(ordered_ids, active_ids)
     ordered_ids.length == active_ids.length && ordered_ids.sort == active_ids.sort
   end
@@ -109,5 +118,82 @@ class RulesController < ApplicationController
         applicationsCount: rule.rule_applications.size
       }
     end
+  end
+
+  def edit_props(rule, error_messages: [])
+    definition = rule.definition.with_indifferent_access
+
+    {
+      rule: {
+        id: rule.id.to_s,
+        name: rule.name,
+        active: rule.active,
+        priority: rule.priority
+      },
+      definition: {
+        matchMode: %w[all any].include?(definition[:match_mode].to_s) ? definition[:match_mode].to_s : "all",
+        conditions: serialize_conditions_for_edit(definition[:conditions]),
+        actions: serialize_actions_for_edit(definition[:actions])
+      },
+      updateUrl: rule_path(rule),
+      backUrl: rule_path(rule),
+      errorMessages: Array(error_messages)
+    }
+  end
+
+  def serialize_conditions_for_edit(conditions)
+    serialized_conditions = Array(conditions).filter_map do |condition|
+      condition = condition.respond_to?(:to_h) ? condition.to_h.with_indifferent_access : {}
+
+      {
+        field: normalize_condition_field(condition[:field]),
+        operator: normalize_condition_operator(condition[:operator]),
+        value: condition[:value].to_s,
+        caseSensitive: ActiveModel::Type::Boolean.new.cast(condition[:case_sensitive])
+      }
+    end
+
+    return serialized_conditions if serialized_conditions.any?
+
+    [{
+      field: "sender",
+      operator: "contains",
+      value: "",
+      caseSensitive: false
+    }]
+  end
+
+  def serialize_actions_for_edit(actions)
+    serialized_actions = Array(actions).filter_map do |action|
+      action = action.respond_to?(:to_h) ? action.to_h.with_indifferent_access : {}
+      type = normalize_action_type(action[:type])
+
+      {
+        type: type,
+        label: action[:label].to_s
+      }
+    end
+
+    return serialized_actions if serialized_actions.any?
+
+    [{
+      type: "mark_read",
+      label: ""
+    }]
+  end
+
+  def normalize_condition_field(value)
+    value = value.to_s
+    %w[sender subject body].include?(value) ? value : "sender"
+  end
+
+  def normalize_condition_operator(value)
+    value = value.to_s
+    %w[exact contains].include?(value) ? value : "contains"
+  end
+
+  def normalize_action_type(value)
+    value = value.to_s
+    %w[add_label remove_label mark_read trash].include?(value) ? value : "mark_read"
   end
 end

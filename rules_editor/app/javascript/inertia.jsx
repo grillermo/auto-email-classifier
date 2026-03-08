@@ -1,8 +1,10 @@
 import { createInertiaApp } from "@inertiajs/react";
 import { createRoot } from "react-dom/client";
+import RulesEditPage from "./pages/Rules/Edit.jsx";
 import RulesIndexPage from "./pages/Rules/Index.jsx";
 
 const pages = {
+  "Rules/Edit": RulesEditPage,
   "Rules/Index": RulesIndexPage,
 };
 
