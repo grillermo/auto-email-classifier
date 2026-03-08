@@ -1,48 +1,35 @@
 # frozen_string_literal: true
 
-require "google/apis/gmail_v1"
-require "googleauth"
-require "googleauth/stores/file_token_store"
-require "fileutils"
-
 module Gmail
   class OauthManager
-    OOB_URI = "urn:ietf:wg:oauth:2.0:oob"
-    CREDENTIALS_DIR = File.join(Dir.home, ".credentials")
-    DEFAULT_TOKEN_PATH = File.join(CREDENTIALS_DIR, "gmail-modify-token.yaml")
-    USER_ID = "default"
-    SCOPE = Google::Apis::GmailV1::AUTH_GMAIL_MODIFY
+    OOB_URI = Gmail::Authorization::OOB_URI
+    DEFAULT_TOKEN_PATH = Gmail::Authorization::DEFAULT_TOKEN_PATH
+    USER_ID = Gmail::Authorization::USER_ID
+    SCOPE = Gmail::Authorization::SCOPE
 
     def initialize(
-      token_path: ENV.fetch("GOOGLE_OAUTH_TOKEN_PATH", DEFAULT_TOKEN_PATH),
+      token_path: Gmail::Authorization.default_token_path,
       client_id: ENV["GOOGLE_CLIENT_ID"],
       client_secret: ENV["GOOGLE_CLIENT_SECRET"]
     )
-      @token_path = token_path
-      @client_id = client_id
-      @client_secret = client_secret
-      validate_environment
-      ensure_credentials_directory
+      @authorization = Gmail::Authorization.new(
+        token_path: token_path,
+        client_id: client_id,
+        client_secret: client_secret,
+        scope: SCOPE
+      )
     end
 
     def ensure_credentials!
-      credentials = authorizer.get_credentials(USER_ID)
+      credentials = authorization.fetch_credentials(user_id: USER_ID)
       return credentials if credentials
 
-      perform_authentication(authorizer)
+      perform_authentication(authorization.authorizer)
     end
 
     private
 
-    attr_reader :client_id, :client_secret, :token_path
-
-    def authorizer
-      @authorizer ||= begin
-        google_client = Google::Auth::ClientId.new(client_id, client_secret)
-        token_store = Google::Auth::Stores::FileTokenStore.new(file: token_path)
-        Google::Auth::UserAuthorizer.new(google_client, SCOPE, token_store)
-      end
-    end
+    attr_reader :authorization
 
     def perform_authentication(authorizer)
       puts "=== Gmail OAuth 2.0 Setup (read and modify) ===\n",
@@ -58,11 +45,14 @@ module Gmail
       code = $stdin.gets.to_s.strip
       raise "No authorization code received" if code.empty?
 
-      authorizer.get_and_store_credentials_from_code(
+      credentials = authorizer.get_and_store_credentials_from_code(
         user_id: USER_ID,
         code: code,
         base_url: OOB_URI
       )
+
+      authorization.cache_credentials_for(user_id: USER_ID, credentials: credentials)
+      credentials
     end
 
     def open_browser(url)
@@ -74,15 +64,6 @@ module Gmail
       when /mingw|mswin/
         system("start '#{url}'")
       end
-    end
-
-    def validate_environment
-      raise "GOOGLE_CLIENT_ID is not set" if client_id.to_s.strip.empty?
-      raise "GOOGLE_CLIENT_SECRET is not set" if client_secret.to_s.strip.empty?
-    end
-
-    def ensure_credentials_directory
-      FileUtils.mkdir_p(File.dirname(token_path))
     end
   end
 end

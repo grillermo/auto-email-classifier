@@ -2,17 +2,13 @@
 
 require "base64"
 require "google/apis/gmail_v1"
-require "googleauth"
-require "googleauth/stores/file_token_store"
 
 module Gmail
   class Client
     APPLICATION_NAME = "Email Rule Automation"
-    CREDENTIALS_DIR = File.join(Dir.home, ".credentials")
-    DEFAULT_TOKEN_PATH = File.join(CREDENTIALS_DIR, "gmail-modify-token.yaml")
-    AUTHORIZATION_USER_ID = "default"
+    DEFAULT_TOKEN_PATH = Gmail::Authorization::DEFAULT_TOKEN_PATH
+    AUTHORIZATION_USER_ID = Gmail::Authorization::USER_ID
     MAX_RESULTS_LIMIT = 500
-    SCOPE = Google::Apis::GmailV1::AUTH_GMAIL_MODIFY
 
     SYSTEM_LABELS = %w[
       INBOX
@@ -30,12 +26,12 @@ module Gmail
       CATEGORY_FORUMS
     ].freeze
 
-    def initialize(user_id: "me", token_path: DEFAULT_TOKEN_PATH)
+    def initialize(user_id: "me", token_path: Gmail::Authorization.default_token_path)
       @user_id = user_id
-      @token_path = token_path
+      @authorization = Gmail::Authorization.new(token_path: token_path)
       @service = Google::Apis::GmailV1::GmailService.new
       @service.client_options.application_name = APPLICATION_NAME
-      @service.authorization = authorize
+      @service.authorization = authorization.required_credentials(user_id: AUTHORIZATION_USER_ID)
       @label_name_to_id = nil
     end
 
@@ -143,38 +139,9 @@ module Gmail
       service.send_user_message(user_id, message)
     end
 
-    private
+  private
 
-    attr_reader :service, :token_path, :user_id
-
-    def authorize
-      validate_environment
-      validate_credentials
-
-      client_id = Google::Auth::ClientId.new(
-        ENV.fetch("GOOGLE_CLIENT_ID", nil),
-        ENV.fetch("GOOGLE_CLIENT_SECRET", nil)
-      )
-
-      token_store = Google::Auth::Stores::FileTokenStore.new(file: token_path)
-      authorizer = Google::Auth::UserAuthorizer.new(client_id, SCOPE, token_store)
-      credentials = authorizer.get_credentials(AUTHORIZATION_USER_ID)
-
-      raise "No credentials found. Please run ./run.api first to authenticate." if credentials.nil?
-
-      credentials
-    end
-
-    def validate_environment
-      raise "GOOGLE_CLIENT_ID is not set" if ENV["GOOGLE_CLIENT_ID"].to_s.strip.empty?
-      raise "GOOGLE_CLIENT_SECRET is not set" if ENV["GOOGLE_CLIENT_SECRET"].to_s.strip.empty?
-    end
-
-    def validate_credentials
-      return if File.exist?(token_path)
-
-      raise "No credentials found. Please run ./run.api first to authenticate."
-    end
+    attr_reader :authorization, :service, :user_id
 
     def label_name_to_id
       @label_name_to_id ||= begin
