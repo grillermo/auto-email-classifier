@@ -10,7 +10,7 @@ module MailListener
     end
 
     def process!
-      forward_result = Rules::FAutoRulesCreator.new(gmail_client: gmail_client, dry_run: dry_run?).process!
+      forward_result = Rules::AutoRulesCreator.new(gmail_client: gmail_client, dry_run: dry_run?).process!
 
       rules = Rule.active.ordered.to_a
       message_ids = gmail_client.list_message_ids(query: primary_query, max_results: 500)
