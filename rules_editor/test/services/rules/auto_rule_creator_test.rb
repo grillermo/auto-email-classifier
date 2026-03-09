@@ -42,7 +42,7 @@ class RulesAutoRulesCreatorTest < ActiveSupport::TestCase
     processor = Rules::AutoRulesCreator.new(gmail_client: gmail_client, dry_run: true)
 
     previous_classify_query = ENV.delete("AUTO_RULE_CLASSIFY_QUERY")
-    previous_forward_query = ENV.delete("AUTO_RULE_FORWARD_QUERY")
+    previous_forward_query = ENV.delete("AUTO_CLASSIFY_QUERY")
 
     result = nil
     output = begin
@@ -55,7 +55,7 @@ class RulesAutoRulesCreatorTest < ActiveSupport::TestCase
       end.first
     ensure
       ENV["AUTO_RULE_CLASSIFY_QUERY"] = previous_classify_query
-      ENV["AUTO_RULE_FORWARD_QUERY"] = previous_forward_query
+      ENV["AUTO_CLASSIFY_QUERY"] = previous_forward_query
     end
 
     assert_equal 1, result[:inspected]

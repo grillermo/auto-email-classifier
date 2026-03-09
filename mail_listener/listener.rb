@@ -41,16 +41,14 @@ module MailListener
     end
 
     def run
-      install_signal_handlers
       puts "[listener] started (interval=#{@interval}s, mode=#{dry_run? ? "dry-run" : "live"})"
 
-      until @shutdown
+      while true
         start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
         process_cycle
         elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start
 
         sleep_for = @interval - elapsed
-        break if @shutdown
 
         sleep([sleep_for, 1].max)
       end
@@ -66,12 +64,6 @@ module MailListener
 
     def process_cycle
       MailListener::CycleProcessor.new(dry_run: dry_run?).process!
-    end
-
-    def install_signal_handlers
-      %w[INT TERM].each do |signal|
-        Signal.trap(signal) { @shutdown = true }
-      end
     end
   end
 end

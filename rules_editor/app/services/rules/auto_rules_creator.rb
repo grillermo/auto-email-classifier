@@ -60,7 +60,7 @@ module Rules
           notification_gmail_message_id = notification.id
           log_info("sent confirmation email rule_id=#{rule.id} notification_message_id=#{notification_gmail_message_id.inspect}")
         rescue StandardError => e
-          Rails.logger.error("Could not send auto-rule confirmation email for rule #{rule.id}: #{e.class} #{e.message}")
+          puts("Could not send auto-rule confirmation email for rule #{rule.id}: #{e.class} #{e.message}")
         end
 
         auto_rule_event = AutoRuleEvent.create!(
@@ -73,7 +73,7 @@ module Rules
         created += 1
         log_info("completed message_id=#{message_id} created_count=#{created}")
       rescue StandardError => e
-        Rails.logger.error("Classify rule creation failed for message #{message_id}: #{e.class} #{e.message}")
+        puts("Classify rule creation failed for message #{message_id}: #{e.class} #{e.message}")
         log_debug("failure backtrace message_id=#{message_id} backtrace=#{Array(e.backtrace).first(5).join(' | ')}")
       end
 
@@ -90,7 +90,7 @@ module Rules
     end
 
     def classify_query
-      ENV["AUTO_RULE_CLASSIFY_QUERY"].presence || ENV.fetch("AUTO_RULE_FORWARD_QUERY", DEFAULT_CLASSIFY_QUERY)
+      ENV.fetch("AUTO_CLASSIFY_QUERY", DEFAULT_CLASSIFY_QUERY)
     end
 
     def remove_inbox_label
@@ -177,11 +177,11 @@ module Rules
     end
 
     def log_info(message)
-      Rails.logger.info("[auto-rule-debug] #{message}")
+      puts("[auto-rule-debug] #{message}")
     end
 
     def log_debug(message)
-      Rails.logger.debug("[auto-rule-debug] #{message}")
+      puts("[auto-rule-debug] #{message}")
     end
 
     def format_actions(actions)
