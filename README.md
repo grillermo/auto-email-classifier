@@ -82,7 +82,7 @@ bundle exec ruby import_from_mail_app.rb /Users/grillermo/c/email-classifier/Syn
   - Rails rules editor (`index`, `show`, `edit`, `update`, `save_and_apply`, `reorder`) in [rules_controller.rb](/Users/grillermo/c/email-classifier/rules_editor/app/controllers/rules_controller.rb:1) and [routes.rb](/Users/grillermo/c/email-classifier/rules_editor/config/routes.rb:1)
   - JSONB rule model and rule-application/idempotency models in [rule.rb](/Users/grillermo/c/email-classifier/rules_editor/app/models/rule.rb:1)
   - Gmail OAuth + REST client in [oauth_manager.rb](/Users/grillermo/c/email-classifier/rules_editor/app/services/gmail/oauth_manager.rb:1) and [client.rb](/Users/grillermo/c/email-classifier/rules_editor/app/services/gmail/client.rb:1)
-  - Rule engine + matcher + actions + forwarded auto-rule flow in [rule_engine.rb](/Users/grillermo/c/email-classifier/rules_editor/app/services/rules/rule_engine.rb:1) and [forwarded_rule_processor.rb](/Users/grillermo/c/email-classifier/rules_editor/app/services/rules/forwarded_rule_processor.rb:1)
+  - Rule engine + matcher + actions + classify-label auto-rule flow in [rule_engine.rb](/Users/grillermo/c/email-classifier/rules_editor/app/services/rules/rule_engine.rb:1) and [forwarded_rule_processor.rb](/Users/grillermo/c/email-classifier/rules_editor/app/services/rules/forwarded_rule_processor.rb:1)
   - Apple Mail importer in [import_from_mail_app.rb](/Users/grillermo/c/email-classifier/rules_editor/import_from_mail_app.rb:1)
   - Tailwind-based UI + Inertia React rules index reorder page and dynamic edit form in [rules_controller.rb](/Users/grillermo/c/email-classifier/rules_editor/app/controllers/rules_controller.rb:1), [Index.jsx](/Users/grillermo/c/email-classifier/rules_editor/app/javascript/pages/Rules/Index.jsx:1), [inertia.jsx](/Users/grillermo/c/email-classifier/rules_editor/app/javascript/inertia.jsx:1), and [rules_form.js](/Users/grillermo/c/email-classifier/rules_editor/app/javascript/rules_form.js:1)
 - Applied your requested cleanup changes:
@@ -99,7 +99,7 @@ bundle exec ruby import_from_mail_app.rb /Users/grillermo/c/email-classifier/Syn
     - Removed gem/dependency references in [Gemfile](/Users/grillermo/c/email-classifier/rules_editor/Gemfile:1) and [Gemfile.lock](/Users/grillermo/c/email-classifier/rules_editor/Gemfile.lock:302)
     - Deleted `rules_editor/config/deploy.yml`, `rules_editor/bin/kamal`, and `.kamal/`
     - Cleaned Docker comment in [Dockerfile](/Users/grillermo/c/email-classifier/rules_editor/Dockerfile:4)
-  - Forwarded emails now create inactive rules by default:
+  - Emails tagged with `classify` now create inactive rules by default:
     - `active: false` in [forwarded_rule_processor.rb](/Users/grillermo/c/email-classifier/rules_editor/app/services/rules/forwarded_rule_processor.rb:74)
 - Kept `.env.example` and updated docs:
   - [.env.example](/Users/grillermo/c/email-classifier/rules_editor/.env.example:1)

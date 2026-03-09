@@ -1,17 +1,16 @@
 # frozen_string_literal: true
 
 module Rules
-  class ForwardedRuleProcessor
-    DEFAULT_FORWARD_QUERY = 'is:unread in:inbox from:me (subject:"Fwd:" OR subject:"FW:")'
+  class AutoRulesCreator
+    DEFAULT_CLASSIFY_QUERY = "label:classify"
 
-    def initialize(gmail_client: Gmail::Client.new, parser: ForwardedContentParser.new, dry_run: false)
+    def initialize(gmail_client: Gmail::Client.new, dry_run: false)
       @gmail_client = gmail_client
-      @parser = parser
       @dry_run = dry_run
     end
 
     def process!
-      message_ids = gmail_client.list_message_ids(query: forward_query, max_results: 100)
+      message_ids = gmail_client.list_message_ids(query: classify_query, max_results: 100)
       return { inspected: 0, created: 0 } if message_ids.empty?
 
       owner_email = gmail_client.profile.email_address
@@ -21,23 +20,14 @@ module Rules
         next if AutoRuleEvent.exists?(source_gmail_message_id: message_id)
 
         message = gmail_client.fetch_normalized_message(message_id)
-        forwarded_data = parser.parse(message[:body])
+        message_data = extract_rule_data_from_message(message)
 
-        unless forwarded_data
-          if dry_run?
-            log_dry_run("message=#{message_id} would mark forwarded email as read because it could not be parsed")
-          else
-            gmail_client.mark_message_read(message_id)
-          end
-          next
-        end
-
-        rule = build_rule_from_forwarded_data(forwarded_data, source_message_id: message_id)
+        rule = build_rule_from_message_data(message_data, source_message_id: message_id)
 
         if dry_run?
           log_dry_run("message=#{message_id} would create inactive rule name=#{rule.name.inspect} priority=#{rule.priority} actions=#{format_actions(rule.actions)}")
           log_dry_run("message=#{message_id} would send confirmation email to=#{owner_email.inspect}")
-          log_dry_run("message=#{message_id} would mark forwarded email as read")
+          log_dry_run("message=#{message_id} would mark classify email as read")
           created += 1
           next
         end
@@ -58,10 +48,9 @@ module Rules
           notification_gmail_message_id: notification_gmail_message_id
         )
 
-        gmail_client.mark_message_read(message_id)
         created += 1
       rescue StandardError => e
-        Rails.logger.error("Forwarded rule creation failed for message #{message_id}: #{e.class} #{e.message}")
+        Rails.logger.error("Classify rule creation failed for message #{message_id}: #{e.class} #{e.message}")
       end
 
       { inspected: message_ids.length, created: created }
@@ -69,23 +58,23 @@ module Rules
 
     private
 
-    attr_reader :gmail_client, :parser
+    attr_reader :gmail_client
 
     def dry_run?
       @dry_run
     end
 
-    def forward_query
-      ENV.fetch("AUTO_RULE_FORWARD_QUERY", DEFAULT_FORWARD_QUERY)
+    def classify_query
+      ENV["AUTO_RULE_CLASSIFY_QUERY"].presence || ENV.fetch("AUTO_RULE_FORWARD_QUERY", DEFAULT_CLASSIFY_QUERY)
     end
 
     def remove_inbox_label
       ENV.fetch("AUTO_RULE_DEFAULT_REMOVE_LABEL", "INBOX")
     end
 
-    def build_rule_from_forwarded_data(forwarded_data, source_message_id:)
-      sender = forwarded_data.fetch(:sender)
-      subject = forwarded_data.fetch(:subject)
+    def build_rule_from_message_data(message_data, source_message_id:)
+      sender = message_data.fetch(:sender)
+      subject = message_data.fetch(:subject)
 
       Rule.new(
         name: "Auto: #{sender} | #{subject}".slice(0, 255),
@@ -95,7 +84,7 @@ module Rules
           match_mode: "all",
           conditions: [
             { field: "sender", operator: "exact", value: sender, case_sensitive: false },
-            { field: "subject", operator: "exact", value: subject, case_sensitive: false }
+            { field: "subject", operator: "contains", value: subject, case_sensitive: false }
           ],
           actions: [
             { type: "mark_read" },
@@ -103,10 +92,32 @@ module Rules
           ]
         },
         metadata: {
-          source: "forwarded_auto_rule",
+          source: "classify_label_auto_rule",
           source_gmail_message_id: source_message_id
         }
       )
+    end
+
+    def extract_rule_data_from_message(message)
+      sender = normalize_sender(message[:from].to_s)
+      subject = message[:subject].to_s.strip
+      return nil if sender.empty? || subject.empty?
+
+      {
+        sender: sender,
+        subject: subject
+      }
+    end
+
+    def normalize_sender(from_header)
+      from_header = from_header.strip
+      return "" if from_header.empty?
+
+      matched = from_header.match(/<([^>]+)>/)
+      return matched[1].strip if matched
+
+      email = from_header.match(/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/i)
+      email ? email[0].strip : from_header
     end
 
     def send_confirmation_email(rule:, to:)
