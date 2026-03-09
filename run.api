@@ -49,8 +49,8 @@ def ensure_assets_built!
   end
 end
 
-ensure_oauth!
 ensure_assets_built!
+ensure_oauth!
 puts "[supervisor] dry-run enabled; the listener will log planned actions without applying them" if options[:dry_run]
 
 listener_command = ["bundle", "exec", "ruby", File.join(PROJECT_ROOT, "mail_listener", "listener.rb")]
