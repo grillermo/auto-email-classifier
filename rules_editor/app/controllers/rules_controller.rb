@@ -20,6 +20,13 @@ class RulesController < ApplicationController
     @matching_emails_total_count = matching_emails.fetch(:total_count)
     @matching_emails_truncated = matching_emails.fetch(:truncated)
     @matching_emails_error = matching_emails.fetch(:error)
+
+    gmail_preview = Rules::GmailAffectedEmailsLoader.new(rule: @rule).load
+    @gmail_preview_emails = gmail_preview.fetch(:emails)
+    @gmail_preview_total_count = gmail_preview.fetch(:total_count)
+    @gmail_preview_scanned_count = gmail_preview.fetch(:scanned_count)
+    @gmail_preview_truncated = gmail_preview.fetch(:truncated)
+    @gmail_preview_error = gmail_preview.fetch(:error)
   end
 
   def edit
