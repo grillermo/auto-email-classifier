@@ -107,7 +107,7 @@ class MailAppImporter
 
       {
         field: field,
-        operator: condition["Qualifier"] == "IsEqualTo" ? "exact" : "contains",
+        operator: 'contains',
         value: value,
         case_sensitive: false
       }

@@ -28,14 +28,7 @@ module Rules
 
       left, right = normalize_comparison(candidate, expected, case_sensitive: case_sensitive)
 
-      case condition[:operator]
-      when "exact"
-        left == right
-      when "contains"
-        left.include?(right)
-      else
-        false
-      end
+      left.include?(right)
     end
 
     def field_value(field)

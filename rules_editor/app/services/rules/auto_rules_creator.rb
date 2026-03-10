@@ -120,7 +120,7 @@ module Rules
         definition: {
           match_mode: "all",
           conditions: [
-            { field: "sender", operator: "exact", value: sender, case_sensitive: false },
+            { field: "sender", operator: "contains", value: sender, case_sensitive: false },
             { field: "subject", operator: "contains", value: subject, case_sensitive: false }
           ],
           actions: [

@@ -61,7 +61,7 @@ class Rule < ApplicationRecord
       value = condition[:value]
 
       errors.add(:definition, "condition field is invalid") unless %w[sender subject body].include?(field)
-      errors.add(:definition, "condition operator is invalid") unless %w[exact contains].include?(operator)
+      errors.add(:definition, "condition operator is invalid") unless operator == 'contains'
       errors.add(:definition, "condition value cannot be blank") if value.to_s.strip.empty?
     end
 

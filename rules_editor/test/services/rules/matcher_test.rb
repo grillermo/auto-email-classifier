@@ -11,7 +11,6 @@ class RulesMatcherTest < ActiveSupport::TestCase
         match_mode: "all",
         conditions: [
           { field: "sender", operator: "contains", value: "billing@" },
-          { field: "subject", operator: "exact", value: "Invoice" }
         ],
         actions: [{ type: "mark_read" }]
       }
@@ -48,7 +47,7 @@ class RulesMatcherTest < ActiveSupport::TestCase
       definition: {
         match_mode: "any",
         conditions: [
-          { field: "sender", operator: "exact", value: "alerts@example.com" },
+          { field: "sender", operator: "contains", value: "alerts@example.com" },
           { field: "subject", operator: "contains", value: "payment" }
         ],
         actions: [{ type: "mark_read" }]

@@ -228,7 +228,7 @@ class RulesController < ApplicationController
 
       {
         field: normalize_condition_field(condition[:field]),
-        operator: normalize_condition_operator(condition[:operator]),
+        operator: 'contains',
         value: condition[:value].to_s,
         caseSensitive: ActiveModel::Type::Boolean.new.cast(condition[:case_sensitive])
       }
@@ -266,11 +266,6 @@ class RulesController < ApplicationController
   def normalize_condition_field(value)
     value = value.to_s
     %w[sender subject body].include?(value) ? value : "sender"
-  end
-
-  def normalize_condition_operator(value)
-    value = value.to_s
-    %w[exact contains].include?(value) ? value : "contains"
   end
 
   def normalize_action_type(value)

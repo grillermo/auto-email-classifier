@@ -1,7 +1,7 @@
 import { useForm } from "@inertiajs/react";
 
 export const CONDITION_FIELDS = ["sender", "subject", "body"];
-export const CONDITION_OPERATORS = ["exact", "contains"];
+export const CONDITION_OPERATORS = ["contains"];
 export const ACTION_TYPES = ["add_label", "remove_label", "mark_read", "trash"];
 
 const DEFAULT_CONDITION = {
