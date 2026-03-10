@@ -38,6 +38,7 @@ class RulesShowTest < ActionDispatch::IntegrationTest
     matching_email = payload.dig("props", "matchingEmails", "emails", 0)
 
     assert_equal "Rules/Show", payload["component"]
+    assert_equal({}, payload.dig("props", "errors"))
     assert_equal 1, payload.dig("props", "matchingEmails", "totalCount")
     assert_equal "Invoice March", matching_email.fetch("subject")
     assert_equal "billing@example.com", matching_email.fetch("from")

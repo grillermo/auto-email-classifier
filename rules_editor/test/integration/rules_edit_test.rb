@@ -44,6 +44,7 @@ class RulesEditTest < ActionDispatch::IntegrationTest
 
     payload = JSON.parse(response.body)
     assert_equal "Rules/Edit", payload["component"]
+    assert_equal({}, payload.dig("props", "errors"))
     assert_includes payload.dig("props", "errorMessages"), "Name can't be blank"
   end
 
