@@ -28,7 +28,7 @@ module Rules
       { matched_count: 1, applied_count: result[:applied] ? 1 : 0 }
     end
 
-    def apply_by_query(query: DEFAULT_QUERY)
+    def apply_by_query(query)
       engine = RuleEngine.new(gmail_client: gmail_client)
 
       matched_count = 0
