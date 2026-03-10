@@ -50,30 +50,32 @@ module Rules
         end
 
         log_debug("saving rule for message_id=#{message_id}")
-        rule.save!
+        if rule.save
+          apply_rule(rule, message_id, dry_run: dry_run?)
+          log_info("saved rule_id=#{rule.id} message_id=#{message_id}")
 
-        apply_rule(rule, message_id, dry_run: dry_run?)
-        log_info("saved rule_id=#{rule.id} message_id=#{message_id}")
+          begin
+            log_debug("sending ntfy notification for rule_id=#{rule.id}")
+            send_ntfy_notification(rule: rule)
+            log_info("sent ntfy notification rule_id=#{rule.id}")
+          rescue StandardError => e
+            log_info("Could not send auto-rule ntfy notification for rule #{rule.id}: #{e.class} #{e.message}")
+          end
 
-        begin
-          log_debug("sending ntfy notification for rule_id=#{rule.id}")
-          send_ntfy_notification(rule: rule)
-          log_info("sent ntfy notification rule_id=#{rule.id}")
-        rescue StandardError => e
-          puts("Could not send auto-rule ntfy notification for rule #{rule.id}: #{e.class} #{e.message}")
+          auto_rule_event = AutoRuleEvent.create!(
+            source_gmail_message_id: message_id,
+            created_rule: rule,
+            notification_gmail_message_id: nil
+          )
+          log_debug("created auto_rule_event_id=#{auto_rule_event.id} message_id=#{message_id}")
+
+          created += 1
+          log_info("completed message_id=#{message_id} created_count=#{created}")
+        else
+          log_info("Failed to save rule for message_id=#{message_id}: #{rule.errors.full_messages.join(', ')}")
         end
-
-        auto_rule_event = AutoRuleEvent.create!(
-          source_gmail_message_id: message_id,
-          created_rule: rule,
-          notification_gmail_message_id: nil
-        )
-        log_debug("created auto_rule_event_id=#{auto_rule_event.id} message_id=#{message_id}")
-
-        created += 1
-        log_info("completed message_id=#{message_id} created_count=#{created}")
       rescue StandardError => e
-        puts("Classify rule creation failed for message #{message_id}: #{e.class} #{e.message}")
+        log_info("Classify rule creation failed for message #{message_id}: #{e.class} #{e.message}")
         log_debug("failure backtrace message_id=#{message_id} backtrace=#{Array(e.backtrace).first(5).join(' | ')}")
       end
 
@@ -104,7 +106,7 @@ module Rules
     def apply_rule(rule, message_id, dry_run: true)
       result = Rules::OneOffApplier.new(rule: rule).apply!(message_id: message_id)
 
-      puts "Rule saved and applied (matched: #{result[:matched_count]}, applied: #{result[:applied_count]})"
+      log_info "Rule saved and applied (matched: #{result[:matched_count]}, applied: #{result[:applied_count]})"
     end
 
     def build_rule_from_message_data(message_data, source_message_id:)
