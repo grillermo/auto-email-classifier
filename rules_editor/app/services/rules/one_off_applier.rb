@@ -9,7 +9,26 @@ module Rules
       @gmail_client = gmail_client
     end
 
-    def apply!(query: DEFAULT_QUERY)
+    def apply!(query: nil, message_id: nil)
+      if message_id
+        apply_by_message_id(message_id)
+      elsif query
+        apply_by_query(query)
+      else
+        raise ArgumentError, "Either message_id or query must be provided"
+      end
+    end
+
+    def apply_by_message_id(message_id)
+      engine = RuleEngine.new(gmail_client: gmail_client)
+
+      message = gmail_client.fetch_normalized_message(message_id)
+      result = engine.process_message!(message: message, rules_scope: [rule])
+
+      { matched_count: 1, applied_count: result[:applied] ? 1 : 0 }
+    end
+
+    def apply_by_query(query: DEFAULT_QUERY)
       engine = RuleEngine.new(gmail_client: gmail_client)
 
       matched_count = 0

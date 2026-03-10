@@ -2,7 +2,7 @@
 
 module Rules
   class AutoRulesCreator
-    DEFAULT_CLASSIFY_QUERY = "label:classify"
+    DEFAULT_LABEL_TO_CLASSIFY = "classify"
 
     def initialize(gmail_client: Gmail::Client.new, dry_run: false)
       @gmail_client = gmail_client
@@ -51,6 +51,8 @@ module Rules
 
         log_debug("saving rule for message_id=#{message_id}")
         rule.save!
+
+        apply_rule(rule, message_id, dry_run: dry_run)
         log_info("saved rule_id=#{rule.id} message_id=#{message_id}")
 
         notification_gmail_message_id = nil
@@ -89,12 +91,22 @@ module Rules
       @dry_run
     end
 
+    def classify_label_auto_rule
+      ENV.fetch("AUTO_CLASSIFY_LABEL", DEFAULT_LABEL_TO_CLASSIFY)
+    end
+
     def classify_query
-      ENV.fetch("AUTO_CLASSIFY_QUERY", DEFAULT_CLASSIFY_QUERY)
+      "label:#{classify_label_auto_rule}"
     end
 
     def remove_inbox_label
       ENV.fetch("AUTO_RULE_DEFAULT_REMOVE_LABEL", "INBOX")
+    end
+
+    def apply_rule(rule, message_id, dry_run: true)
+      result = Rules::OneOffApplier.new(rule: rule).apply!(message_id: message_id)
+
+      puts "Rule saved and applied (matched: #{result[:matched_count]}, applied: #{result[:applied_count]})"
     end
 
     def build_rule_from_message_data(message_data, source_message_id:)
@@ -113,7 +125,8 @@ module Rules
           ],
           actions: [
             { type: "mark_read" },
-            { type: "remove_label", label: remove_inbox_label }
+            { type: "remove_label", label: remove_inbox_label },
+            { type: "remove_label", label: classify_label_auto_rule },
           ]
         },
         metadata: {

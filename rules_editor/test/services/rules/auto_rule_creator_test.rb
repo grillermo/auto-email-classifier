@@ -41,8 +41,7 @@ class RulesAutoRulesCreatorTest < ActiveSupport::TestCase
     gmail_client = FakeGmailClient.new
     processor = Rules::AutoRulesCreator.new(gmail_client: gmail_client, dry_run: true)
 
-    previous_classify_query = ENV.delete("AUTO_RULE_CLASSIFY_QUERY")
-    previous_forward_query = ENV.delete("AUTO_CLASSIFY_QUERY")
+    previous_classify_label = ENV.delete("AUTO_CLASSIFY_LABEL")
 
     result = nil
     output = begin
@@ -54,13 +53,12 @@ class RulesAutoRulesCreatorTest < ActiveSupport::TestCase
         end
       end.first
     ensure
-      ENV["AUTO_RULE_CLASSIFY_QUERY"] = previous_classify_query
-      ENV["AUTO_CLASSIFY_QUERY"] = previous_forward_query
+      ENV["AUTO_CLASSIFY_LABEL"] = previous_classify_label
     end
 
     assert_equal 1, result[:inspected]
     assert_equal 1, result[:created]
-    assert_equal Rules::AutoRulesCreator::DEFAULT_CLASSIFY_QUERY, gmail_client.last_query
+    assert_equal "label:#{Rules::AutoRulesCreator::DEFAULT_LABEL_TO_CLASSIFY}", gmail_client.last_query
     assert_empty gmail_client.mark_read_ids
     assert_empty gmail_client.sent_messages
     assert_includes output, "would create inactive rule"
