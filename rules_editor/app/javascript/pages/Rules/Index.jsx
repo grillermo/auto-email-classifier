@@ -1,6 +1,38 @@
 import { Head } from "@inertiajs/react";
 import { useRef, useState } from "react";
 
+function ShowIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 20 20"
+      fill="none"
+      className="h-4 w-4"
+      stroke="currentColor"
+      strokeWidth="1.75"
+    >
+      <path d="M1.5 10c1.7-3.2 4.8-5 8.5-5s6.8 1.8 8.5 5c-1.7 3.2-4.8 5-8.5 5S3.2 13.2 1.5 10Z" />
+      <circle cx="10" cy="10" r="2.5" />
+    </svg>
+  );
+}
+
+function EditIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 20 20"
+      fill="none"
+      className="h-4 w-4"
+      stroke="currentColor"
+      strokeWidth="1.75"
+    >
+      <path d="M2.5 17.5h4.2l9.6-9.6a1.5 1.5 0 0 0 0-2.1l-2.1-2.1a1.5 1.5 0 0 0-2.1 0l-9.6 9.6v4.2Z" />
+      <path d="m10.8 5 4.2 4.2" />
+    </svg>
+  );
+}
+
 function statusClasses(type) {
   if (type === "success") {
     return "border-emerald-300 bg-emerald-50 text-emerald-800";
@@ -163,13 +195,24 @@ export default function RulesIndex({ activeRules, inactiveRules, reorderUrl }) {
                 <td className="px-4 py-3 text-slate-600">{rule.conditionsCount}</td>
                 <td className="px-4 py-3 text-slate-600">{rule.actionsCount}</td>
                 <td className="px-4 py-3 text-right">
-                  <a href={rule.showUrl} className="text-sky-700 hover:underline">
-                    Show
-                  </a>
-                  <span className="px-1 text-slate-300">|</span>
-                  <a href={rule.editUrl} className="text-sky-700 hover:underline">
-                    Edit
-                  </a>
+                  <span className="inline-flex items-center gap-3">
+                    <a
+                      href={rule.showUrl}
+                      className="inline-flex items-center text-sky-700 transition hover:text-sky-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+                      aria-label={`Show ${rule.name}`}
+                      title="Show"
+                    >
+                      <ShowIcon />
+                    </a>
+                    <a
+                      href={rule.editUrl}
+                      className="inline-flex items-center text-sky-700 transition hover:text-sky-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+                      aria-label={`Edit ${rule.name}`}
+                      title="Edit"
+                    >
+                      <EditIcon />
+                    </a>
+                  </span>
                 </td>
                 <td className="px-4 py-3 text-slate-600">{rule.applicationsCount}</td>
               </tr>
@@ -196,13 +239,24 @@ export default function RulesIndex({ activeRules, inactiveRules, reorderUrl }) {
                     <td className="px-4 py-3 font-mono text-slate-500">{rule.priority}</td>
                     <td className="px-4 py-3 text-slate-500">{rule.name}</td>
                     <td className="px-4 py-3 text-right">
-                      <a href={rule.showUrl} className="text-sky-700 hover:underline">
-                        Show
-                      </a>
-                      <span className="px-1 text-slate-300">|</span>
-                      <a href={rule.editUrl} className="text-sky-700 hover:underline">
-                        Edit
-                      </a>
+                      <span className="inline-flex items-center gap-3">
+                        <a
+                          href={rule.showUrl}
+                          className="inline-flex items-center text-sky-700 transition hover:text-sky-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+                          aria-label={`Show ${rule.name}`}
+                          title="Show"
+                        >
+                          <ShowIcon />
+                        </a>
+                        <a
+                          href={rule.editUrl}
+                          className="inline-flex items-center text-sky-700 transition hover:text-sky-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+                          aria-label={`Edit ${rule.name}`}
+                          title="Edit"
+                        >
+                          <EditIcon />
+                        </a>
+                      </span>
                     </td>
                   </tr>
                 ))}
