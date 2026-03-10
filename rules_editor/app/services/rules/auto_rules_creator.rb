@@ -52,7 +52,7 @@ module Rules
         log_debug("saving rule for message_id=#{message_id}")
         rule.save!
 
-        apply_rule(rule, message_id, dry_run: dry_run)
+        apply_rule(rule, message_id, dry_run: dry_run?)
         log_info("saved rule_id=#{rule.id} message_id=#{message_id}")
 
         begin
@@ -124,7 +124,7 @@ module Rules
           actions: [
             { type: "mark_read" },
             { type: "remove_label", label: remove_inbox_label },
-            { type: "remove_label", label: classify_label_auto_rule },
+            { type: "remove_label", label: classify_label_auto_rule }
           ]
         },
         metadata: {
