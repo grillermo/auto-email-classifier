@@ -42,7 +42,7 @@ module Rules
 
         if dry_run?
           log_dry_run("message=#{message_id} would create inactive rule name=#{rule.name.inspect} priority=#{rule.priority} actions=#{format_actions(rule.actions)}")
-          log_dry_run("message=#{message_id} would send confirmation email to=#{owner_email.inspect}")
+          log_dry_run("message=#{message_id} would send ntfy notification to channel=#{ENV.fetch('NTFY_CHANNEL', 'not_set').inspect}")
           log_dry_run("message=#{message_id} would mark classify email as read")
           log_info("dry_run finished for message_id=#{message_id}")
           created += 1
@@ -55,20 +55,18 @@ module Rules
         apply_rule(rule, message_id, dry_run: dry_run)
         log_info("saved rule_id=#{rule.id} message_id=#{message_id}")
 
-        notification_gmail_message_id = nil
         begin
-          log_debug("sending confirmation email for rule_id=#{rule.id} to=#{owner_email.inspect}")
-          notification = send_confirmation_email(rule: rule, to: owner_email)
-          notification_gmail_message_id = notification.id
-          log_info("sent confirmation email rule_id=#{rule.id} notification_message_id=#{notification_gmail_message_id.inspect}")
+          log_debug("sending ntfy notification for rule_id=#{rule.id}")
+          send_ntfy_notification(rule: rule)
+          log_info("sent ntfy notification rule_id=#{rule.id}")
         rescue StandardError => e
-          puts("Could not send auto-rule confirmation email for rule #{rule.id}: #{e.class} #{e.message}")
+          puts("Could not send auto-rule ntfy notification for rule #{rule.id}: #{e.class} #{e.message}")
         end
 
         auto_rule_event = AutoRuleEvent.create!(
           source_gmail_message_id: message_id,
           created_rule: rule,
-          notification_gmail_message_id: notification_gmail_message_id
+          notification_gmail_message_id: nil
         )
         log_debug("created auto_rule_event_id=#{auto_rule_event.id} message_id=#{message_id}")
 
@@ -158,7 +156,8 @@ module Rules
       email ? email[0].strip : from_header
     end
 
-    def send_confirmation_email(rule:, to:)
+    def send_ntfy_notification(rule:)
+      channel = ENV.fetch("NTFY_CHANNEL")
       edit_url = "#{base_url}/rules/#{rule.id}/edit"
       body = <<~BODY
         A new rule was created automatically.
@@ -173,12 +172,7 @@ module Rules
         Edit rule: #{edit_url}
       BODY
 
-      gmail_client.send_plain_text(
-        to: to,
-        from: ENV.fetch("AUTO_RULE_REPLY_FROM", "me"),
-        subject: "Rule created: #{rule.name}",
-        body: body
-      )
+      HTTP.post("https://ntfy.sh/#{channel}", body: body)
     end
 
     def base_url
