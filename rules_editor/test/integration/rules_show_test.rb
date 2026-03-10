@@ -30,12 +30,23 @@ class RulesShowTest < ActionDispatch::IntegrationTest
       }
     )
 
-    get rule_path(rule)
+    get rule_path(rule), headers: inertia_headers
 
     assert_response :success
-    assert_select "h2", text: "Matching Emails (1)"
-    assert_select "td", text: "Invoice March"
-    assert_select "td", text: "billing@example.com"
-    assert_select "a[href='https://mail.google.com/mail/u/0/#all/thread-1']", text: "Open in Gmail"
+
+    payload = JSON.parse(response.body)
+    matching_email = payload.dig("props", "matchingEmails", "emails", 0)
+
+    assert_equal "Rules/Show", payload["component"]
+    assert_equal 1, payload.dig("props", "matchingEmails", "totalCount")
+    assert_equal "Invoice March", matching_email.fetch("subject")
+    assert_equal "billing@example.com", matching_email.fetch("from")
+    assert_equal "https://mail.google.com/mail/u/0/#all/thread-1", matching_email.fetch("gmailUrl")
+  end
+
+  private
+
+  def inertia_headers
+    { "X-Inertia" => "true" }
   end
 end

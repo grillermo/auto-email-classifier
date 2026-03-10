@@ -16,17 +16,13 @@ class RulesController < ApplicationController
 
   def show
     matching_emails = Rules::MatchingEmailsLoader.new(rule: @rule).load
-    @matching_emails = matching_emails.fetch(:emails)
-    @matching_emails_total_count = matching_emails.fetch(:total_count)
-    @matching_emails_truncated = matching_emails.fetch(:truncated)
-    @matching_emails_error = matching_emails.fetch(:error)
-
     gmail_preview = Rules::GmailAffectedEmailsLoader.new(rule: @rule).load
-    @gmail_preview_emails = gmail_preview.fetch(:emails)
-    @gmail_preview_total_count = gmail_preview.fetch(:total_count)
-    @gmail_preview_scanned_count = gmail_preview.fetch(:scanned_count)
-    @gmail_preview_truncated = gmail_preview.fetch(:truncated)
-    @gmail_preview_error = gmail_preview.fetch(:error)
+
+    render inertia: "Rules/Show", props: show_props(
+      @rule,
+      matching_emails: matching_emails,
+      gmail_preview: gmail_preview
+    )
   end
 
   def edit
@@ -145,6 +141,84 @@ class RulesController < ApplicationController
       updateUrl: rule_path(rule),
       backUrl: rule_path(rule),
       errorMessages: Array(error_messages)
+    }
+  end
+
+  def show_props(rule, matching_emails:, gmail_preview:)
+    {
+      rule: {
+        id: rule.id.to_s,
+        name: rule.name,
+        active: rule.active,
+        priority: rule.priority,
+        matchMode: rule.match_mode,
+        conditions: serialize_conditions_for_show(rule.conditions),
+        actions: serialize_actions_for_show(rule.actions),
+        metadata: JSON.pretty_generate(rule.metadata),
+        editUrl: edit_rule_path(rule),
+        backUrl: rules_path
+      },
+      matchingEmails: serialize_matching_emails_for_show(matching_emails),
+      gmailPreview: serialize_gmail_preview_for_show(gmail_preview)
+    }
+  end
+
+  def serialize_conditions_for_show(conditions)
+    Array(conditions).map do |condition|
+      condition = condition.respond_to?(:to_h) ? condition.to_h.with_indifferent_access : {}
+
+      {
+        field: condition[:field].to_s,
+        operator: condition[:operator].to_s,
+        value: condition[:value].to_s,
+        caseSensitive: ActiveModel::Type::Boolean.new.cast(condition[:case_sensitive])
+      }
+    end
+  end
+
+  def serialize_actions_for_show(actions)
+    Array(actions).map do |action|
+      action = action.respond_to?(:to_h) ? action.to_h.with_indifferent_access : {}
+
+      {
+        type: action[:type].to_s,
+        label: action[:label].to_s
+      }
+    end
+  end
+
+  def serialize_matching_emails_for_show(payload)
+    {
+      emails: Array(payload[:emails]).map { |email| serialize_email_for_show(email) },
+      totalCount: payload[:total_count].to_i,
+      truncated: ActiveModel::Type::Boolean.new.cast(payload[:truncated]),
+      error: payload[:error].presence
+    }
+  end
+
+  def serialize_gmail_preview_for_show(payload)
+    {
+      emails: Array(payload[:emails]).map do |email|
+        serialized_email = serialize_email_for_show(email)
+        normalized_email = email.respond_to?(:to_h) ? email.to_h.with_indifferent_access : {}
+
+        serialized_email.merge(actions: Array(normalized_email[:actions]).map(&:to_s))
+      end,
+      totalCount: payload[:total_count].to_i,
+      scannedCount: payload[:scanned_count].to_i,
+      truncated: ActiveModel::Type::Boolean.new.cast(payload[:truncated]),
+      error: payload[:error].presence
+    }
+  end
+
+  def serialize_email_for_show(email)
+    email = email.respond_to?(:to_h) ? email.to_h.with_indifferent_access : {}
+
+    {
+      subject: email[:subject].to_s,
+      from: email[:from].to_s,
+      date: email[:date].to_s,
+      gmailUrl: email[:gmail_url].to_s
     }
   end
 
