@@ -30,9 +30,29 @@ module MailListener
     rescue StandardError => e
       puts "[listener] cycle failed: #{e.class} #{e.message}"
       puts e.backtrace.first(5).join("\n")
+
+      if e.class.name == "Google::Auth::AuthorizationError" || e.message.include?("Authorization failed")
+        send_auth_error_ntfy_notification
+      end
     end
 
     private
+
+    def send_auth_error_ntfy_notification
+      channel = ENV.fetch("NTFY_CHANNEL", nil)
+      return unless channel
+
+      body = <<~BODY
+        Gmail Authorization Failed.
+
+        The automatic email listener cycle failed because it could not authorize with Google.
+        Please update your Gmail API token to continue processing emails.
+      BODY
+
+      HTTP.post("https://ntfy.sh/#{channel}", body: body)
+    rescue StandardError => e
+      puts "[listener] failed to send ntfy notification: #{e.class} #{e.message}"
+    end
 
     attr_reader :gmail_client
 
