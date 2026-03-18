@@ -12,6 +12,7 @@ module Gmail
       client_id: ENV["GOOGLE_CLIENT_ID"],
       client_secret: ENV["GOOGLE_CLIENT_SECRET"]
     )
+      @token_path = token_path
       @authorization = Gmail::Authorization.new(
         token_path: token_path,
         client_id: client_id,
@@ -22,14 +23,27 @@ module Gmail
 
     def ensure_credentials!
       credentials = authorization.fetch_credentials(user_id: USER_ID)
-      return credentials if credentials
+      if credentials
+        begin
+          credentials.fetch_access_token!
+          return credentials
+        rescue Signet::AuthorizationError => e
+          puts "Cached credentials are no longer valid (#{e.message}). Please re-authenticate."
+          delete_cached_token!
+        end
+      end
 
       perform_authentication(authorization.authorizer)
     end
 
     private
 
-    attr_reader :authorization
+    attr_reader :authorization, :token_path
+
+    def delete_cached_token!
+      File.delete(token_path) if File.exist?(token_path)
+      Gmail::Authorization.clear_cache!
+    end
 
     def perform_authentication(authorizer)
       puts "=== Gmail OAuth 2.0 Setup (read and modify) ===\n",
