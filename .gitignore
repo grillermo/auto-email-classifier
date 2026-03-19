@@ -9,3 +9,4 @@ rules_editor/storage/*
 mail_listener/log/*
 env
 .env
+.DS_Store
