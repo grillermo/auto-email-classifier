@@ -1,48 +1,24 @@
 import { Head } from "@inertiajs/react";
 import { useRef, useState } from "react";
 
-function ShowIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 20 20"
-      fill="none"
-      className="h-4 w-4"
-      stroke="currentColor"
-      strokeWidth="1.75"
-    >
-      <path d="M1.5 10c1.7-3.2 4.8-5 8.5-5s6.8 1.8 8.5 5c-1.7 3.2-4.8 5-8.5 5S3.2 13.2 1.5 10Z" />
-      <circle cx="10" cy="10" r="2.5" />
-    </svg>
-  );
-}
-
-function EditIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 20 20"
-      fill="none"
-      className="h-4 w-4"
-      stroke="currentColor"
-      strokeWidth="1.75"
-    >
-      <path d="M2.5 17.5h4.2l9.6-9.6a1.5 1.5 0 0 0 0-2.1l-2.1-2.1a1.5 1.5 0 0 0-2.1 0l-9.6 9.6v4.2Z" />
-      <path d="m10.8 5 4.2 4.2" />
-    </svg>
-  );
-}
-
-function statusClasses(type) {
-  if (type === "success") {
-    return "border-emerald-300 bg-emerald-50 text-emerald-800";
-  }
-
-  return "border-rose-300 bg-rose-50 text-rose-800";
-}
-
 function withPriorities(rules) {
   return rules.map((rule, index) => ({ ...rule, priority: index + 1 }));
+}
+
+function FiltersBadge({ count }) {
+  return (
+    <span className="inline-flex items-center px-2 py-1 bg-surface-container-high rounded text-[11px] font-semibold text-on-surface">
+      {count} {count === 1 ? "Filter" : "Filters"}
+    </span>
+  );
+}
+
+function ActionsBadge({ count }) {
+  return (
+    <span className="inline-flex items-center px-2 py-1 bg-surface-container-high rounded text-[11px] font-semibold text-on-surface">
+      {count} {count === 1 ? "Action" : "Actions"}
+    </span>
+  );
 }
 
 export default function RulesIndex({ activeRules, inactiveRules, reorderUrl }) {
@@ -84,7 +60,6 @@ export default function RulesIndex({ activeRules, inactiveRules, reorderUrl }) {
   const handleDragStart = (event, ruleId) => {
     draggedRuleIdRef.current = ruleId;
     setDraggingRuleId(ruleId);
-
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", ruleId);
   };
@@ -93,9 +68,7 @@ export default function RulesIndex({ activeRules, inactiveRules, reorderUrl }) {
     event.preventDefault();
     const draggedRuleId = draggedRuleIdRef.current;
 
-    if (!draggedRuleId || draggedRuleId === targetRuleId) {
-      return;
-    }
+    if (!draggedRuleId || draggedRuleId === targetRuleId) return;
 
     const rowRect = event.currentTarget.getBoundingClientRect();
     const shouldInsertAfter = event.clientY > rowRect.top + rowRect.height / 2;
@@ -104,18 +77,11 @@ export default function RulesIndex({ activeRules, inactiveRules, reorderUrl }) {
       const sourceIndex = rules.findIndex((rule) => rule.id === draggedRuleId);
       const targetIndex = rules.findIndex((rule) => rule.id === targetRuleId);
 
-      if (sourceIndex === -1 || targetIndex === -1) {
-        return rules;
-      }
+      if (sourceIndex === -1 || targetIndex === -1) return rules;
 
       let nextIndex = targetIndex + (shouldInsertAfter ? 1 : 0);
-      if (sourceIndex < nextIndex) {
-        nextIndex -= 1;
-      }
-
-      if (sourceIndex === nextIndex) {
-        return rules;
-      }
+      if (sourceIndex < nextIndex) nextIndex -= 1;
+      if (sourceIndex === nextIndex) return rules;
 
       const reordered = [...rules];
       const [moved] = reordered.splice(sourceIndex, 1);
@@ -127,10 +93,7 @@ export default function RulesIndex({ activeRules, inactiveRules, reorderUrl }) {
 
   const handleDrop = async (event) => {
     event.preventDefault();
-    if (!draggedRuleIdRef.current) {
-      return;
-    }
-
+    if (!draggedRuleIdRef.current) return;
     draggedRuleIdRef.current = null;
     setDraggingRuleId(null);
     await persistOrder();
@@ -145,125 +108,189 @@ export default function RulesIndex({ activeRules, inactiveRules, reorderUrl }) {
     <>
       <Head title="Rules" />
 
-      <div className="mb-6 flex items-center justify-between">
+      {status ? (
+        <div
+          className={`mb-6 px-6 py-4 rounded-xl flex items-center justify-between shadow-sm ${
+            status.type === "success"
+              ? "bg-secondary-container text-on-secondary-container border border-secondary/10"
+              : "bg-error-container text-on-surface"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <span
+              className={`material-symbols-outlined ${
+                status.type === "success" ? "text-secondary" : "text-error"
+              }`}
+            >
+              {status.type === "success" ? "check_circle" : "error"}
+            </span>
+            <span className="font-medium text-sm">{status.message}</span>
+          </div>
+          <button
+            onClick={() => setStatus(null)}
+            className="text-on-surface/40 hover:text-on-surface transition-colors"
+          >
+            <span className="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>
+      ) : null}
+
+      <div className="flex items-end justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-semibold">Rules</h1>
-          <p className="text-sm text-slate-600">
-            Drag and drop active rules to update priority. Priority 1 runs first.
+          <h1 className="text-4xl font-extrabold tracking-tight text-on-surface mb-2">
+            Automation Rules
+          </h1>
+          <p className="text-on-surface-variant max-w-2xl">
+            Rules are processed in the order displayed below. Drag to reprioritize.
           </p>
         </div>
       </div>
 
-      <div
-        className={`mb-4 rounded border px-4 py-2 text-sm ${
-          status ? statusClasses(status.type) : "hidden"
-        }`}
-      >
-        {status?.message}
-      </div>
+      {/* Active Rules */}
+      <section className="mb-16">
+        <div className="flex items-center gap-3 mb-6">
+          <h2 className="text-lg font-bold text-on-surface">Active Rules</h2>
+          <span className="bg-secondary-fixed text-on-secondary-fixed px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
+            {activeRulesState.length} Total
+          </span>
+        </div>
 
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
-          <thead className="bg-slate-50 text-left text-slate-700">
-            <tr>
-              <th className="px-4 py-3">Priority</th>
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Conditions</th>
-              <th className="px-4 py-3">Actions</th>
-              <th className="px-4 py-3 text-right">Links</th>
-              <th className="px-4 py-3 text-right">Applications</th>
-            </tr>
-          </thead>
-          <tbody
-            className="divide-y divide-slate-100"
-            onDrop={handleDrop}
-            onDragOver={(event) => event.preventDefault()}
-          >
-            {activeRulesState.map((rule) => (
-              <tr
-                key={rule.id}
-                draggable
-                onDragStart={(event) => handleDragStart(event, rule.id)}
-                onDragEnd={handleDragEnd}
-                onDragOver={(event) => handleDragOver(event, rule.id)}
-                className={`cursor-move bg-white transition hover:bg-sky-50 ${
-                  draggingRuleId === rule.id ? "opacity-50" : ""
-                }`}
-              >
-                <td className="px-4 py-3 font-mono">{rule.priority}</td>
-                <td className="px-4 py-3 font-medium text-slate-900">{rule.name}</td>
-                <td className="px-4 py-3 text-slate-600">{rule.conditionsCount}</td>
-                <td className="px-4 py-3 text-slate-600">{rule.actionsCount}</td>
-                <td className="px-4 py-3 text-right">
-                  <span className="inline-flex items-center gap-3">
+        <div className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-surface-container-low text-on-surface-variant text-[11px] font-bold uppercase tracking-widest">
+                <th className="pl-6 py-4 w-12"></th>
+                <th className="px-4 py-4">Rule Name</th>
+                <th className="px-4 py-4">Conditions</th>
+                <th className="px-4 py-4">Actions</th>
+                <th className="px-4 py-4">Times Applied</th>
+                <th className="pr-6 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody
+              className="divide-y divide-surface-container"
+              onDrop={handleDrop}
+              onDragOver={(event) => event.preventDefault()}
+            >
+              {activeRulesState.map((rule) => (
+                <tr
+                  key={rule.id}
+                  draggable
+                  onDragStart={(event) => handleDragStart(event, rule.id)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={(event) => handleDragOver(event, rule.id)}
+                  className={`group hover:bg-surface-container-low transition-colors cursor-move ${
+                    draggingRuleId === rule.id ? "opacity-50" : ""
+                  }`}
+                >
+                  <td className="pl-6 py-5">
+                    <span className="material-symbols-outlined text-outline-variant opacity-0 group-hover:opacity-100 transition-opacity select-none">
+                      drag_indicator
+                    </span>
+                  </td>
+                  <td className="px-4 py-5">
+                    <span className="font-bold text-on-surface text-sm">{rule.name}</span>
+                  </td>
+                  <td className="px-4 py-5">
+                    <FiltersBadge count={rule.conditionsCount} />
+                  </td>
+                  <td className="px-4 py-5">
+                    <ActionsBadge count={rule.actionsCount} />
+                  </td>
+                  <td className="px-4 py-5 font-medium text-sm tabular-nums text-on-surface-variant">
+                    {rule.applicationsCount}
+                  </td>
+                  <td className="pr-6 py-5 text-right space-x-1">
                     <a
                       href={rule.showUrl}
-                      className="inline-flex items-center text-sky-700 transition hover:text-sky-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
                       aria-label={`Show ${rule.name}`}
-                      title="Show"
+                      className="inline-flex p-2 hover:bg-surface-container-highest rounded-lg text-on-surface-variant hover:text-on-surface transition-all"
                     >
-                      <ShowIcon />
+                      <span className="material-symbols-outlined text-xl">visibility</span>
                     </a>
                     <a
                       href={rule.editUrl}
-                      className="inline-flex items-center text-sky-700 transition hover:text-sky-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
                       aria-label={`Edit ${rule.name}`}
-                      title="Edit"
+                      className="inline-flex p-2 hover:bg-surface-container-highest rounded-lg text-on-surface-variant hover:text-on-surface transition-all"
                     >
-                      <EditIcon />
+                      <span className="material-symbols-outlined text-xl">edit</span>
                     </a>
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-slate-600">{rule.applicationsCount}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
+      {/* Inactive Rules */}
       {inactiveRules.length > 0 ? (
-        <>
-          <h2 className="mb-3 mt-8 text-lg font-semibold">Inactive Rules</h2>
-          <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
-              <thead className="bg-slate-50 text-left text-slate-700">
-                <tr>
-                  <th className="px-4 py-3">Priority</th>
-                  <th className="px-4 py-3">Name</th>
-                  <th className="px-4 py-3 text-right">Links</th>
+        <section className="opacity-60 transition-opacity hover:opacity-100">
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="text-lg font-bold text-on-surface-variant">Inactive Rules</h2>
+            <span className="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
+              {inactiveRules.length} Total
+            </span>
+          </div>
+
+          <div className="bg-surface-container-low rounded-2xl overflow-hidden border border-surface-container border-dashed">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="text-on-surface-variant text-[11px] font-bold uppercase tracking-widest">
+                  <th className="pl-6 py-4 w-12"></th>
+                  <th className="px-4 py-4">Rule Name</th>
+                  <th className="px-4 py-4">Conditions</th>
+                  <th className="px-4 py-4">Actions</th>
+                  <th className="px-4 py-4">Times Applied</th>
+                  <th className="pr-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody>
                 {inactiveRules.map((rule) => (
-                  <tr key={rule.id} className="bg-slate-50">
-                    <td className="px-4 py-3 font-mono text-slate-500">{rule.priority}</td>
-                    <td className="px-4 py-3 text-slate-500">{rule.name}</td>
-                    <td className="px-4 py-3 text-right">
-                      <span className="inline-flex items-center gap-3">
-                        <a
-                          href={rule.showUrl}
-                          className="inline-flex items-center text-sky-700 transition hover:text-sky-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
-                          aria-label={`Show ${rule.name}`}
-                          title="Show"
-                        >
-                          <ShowIcon />
-                        </a>
-                        <a
-                          href={rule.editUrl}
-                          className="inline-flex items-center text-sky-700 transition hover:text-sky-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
-                          aria-label={`Edit ${rule.name}`}
-                          title="Edit"
-                        >
-                          <EditIcon />
-                        </a>
+                  <tr key={rule.id} className="group">
+                    <td className="pl-6 py-5">
+                      <span className="material-symbols-outlined text-outline-variant">lock</span>
+                    </td>
+                    <td className="px-4 py-5">
+                      <span className="font-bold text-on-surface-variant text-sm italic">
+                        {rule.name}
                       </span>
+                    </td>
+                    <td className="px-4 py-5">
+                      <span className="inline-flex items-center px-2 py-1 bg-surface-container rounded text-[11px] font-medium text-outline">
+                        {rule.conditionsCount} {rule.conditionsCount === 1 ? "Filter" : "Filters"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-5">
+                      <span className="inline-flex items-center px-2 py-1 bg-surface-container rounded text-[11px] font-medium text-outline">
+                        {rule.actionsCount} {rule.actionsCount === 1 ? "Action" : "Actions"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-5 font-medium text-sm tabular-nums text-outline">
+                      {rule.applicationsCount}
+                    </td>
+                    <td className="pr-6 py-5 text-right space-x-1">
+                      <a
+                        href={rule.showUrl}
+                        aria-label={`Show ${rule.name}`}
+                        className="inline-flex p-2 hover:bg-surface-container-highest rounded-lg text-on-surface-variant transition-all"
+                      >
+                        <span className="material-symbols-outlined text-xl">visibility</span>
+                      </a>
+                      <a
+                        href={rule.editUrl}
+                        aria-label={`Edit ${rule.name}`}
+                        className="inline-flex p-2 hover:bg-surface-container-highest rounded-lg text-on-surface-variant transition-all"
+                      >
+                        <span className="material-symbols-outlined text-xl">edit</span>
+                      </a>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </>
+        </section>
       ) : null}
     </>
   );

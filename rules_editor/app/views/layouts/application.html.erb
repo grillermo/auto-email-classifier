@@ -1,17 +1,82 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title inertia><%= content_for(:title) || "Rules Editor" %></title>
+    <title inertia><%= content_for(:title) || "Email Classifier" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Rules Editor">
+    <meta name="application-name" content="Email Classifier">
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
     <%= yield :head %>
     <%= inertia_ssr_head %>
-    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              "primary-fixed": "#dae2fd",
+              "surface-container-high": "#ddeaf3",
+              "primary-fixed-dim": "#ccd4ee",
+              "surface-container-highest": "#d5e5ef",
+              "surface-container": "#e5eff7",
+              "surface-variant": "#d5e5ef",
+              "primary-dim": "#4a5268",
+              "on-surface-variant": "#52616a",
+              "error": "#9f403d",
+              "surface-tint": "#565e74",
+              "surface-dim": "#cadde9",
+              "on-primary-fixed": "#373f54",
+              "surface-bright": "#f6fafe",
+              "surface-container-lowest": "#ffffff",
+              "error-container": "#fe8983",
+              "background": "#f6fafe",
+              "surface": "#f6fafe",
+              "outline-variant": "#a4b4be",
+              "outline": "#6e7d86",
+              "on-primary": "#f7f7ff",
+              "on-background": "#26343d",
+              "on-surface": "#26343d",
+              "on-primary-container": "#4a5167",
+              "secondary": "#006d4b",
+              "primary": "#565e74",
+              "surface-container-low": "#eef4fa",
+              "on-secondary-container": "#005e40",
+              "on-secondary": "#e6ffef",
+              "secondary-fixed": "#85f8c4",
+              "primary-container": "#dae2fd",
+              "secondary-container": "#85f8c4",
+              "on-secondary-fixed": "#004931",
+            },
+            fontFamily: {
+              "headline": ["Manrope", "sans-serif"],
+              "body": ["Inter", "sans-serif"],
+            },
+            borderRadius: {
+              "DEFAULT": "0.125rem",
+              "lg": "0.25rem",
+              "xl": "0.5rem",
+              "2xl": "1rem",
+              "full": "9999px",
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        vertical-align: middle;
+      }
+      body { font-family: 'Inter', sans-serif; }
+      h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+    </style>
 
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
@@ -21,14 +86,33 @@
     <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
   </head>
 
-  <body class="bg-slate-100 text-slate-900">
-    <main class="mx-auto max-w-6xl px-4 py-8">
+  <body class="bg-surface text-on-surface min-h-screen flex flex-col">
+    <header class="bg-slate-50 sticky top-0 z-40 border-b border-surface-container">
+      <div class="flex items-center w-full px-6 py-3 max-w-7xl mx-auto">
+        <span class="text-xl font-bold tracking-tight text-on-surface" style="font-family: Manrope, sans-serif;">Email Classifier</span>
+        <nav class="ml-8 flex items-center gap-6">
+          <a href="/" class="text-on-surface font-semibold border-b-2 border-on-surface pb-1 text-sm">Rules</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-6 pt-8 pb-8">
       <% if flash[:notice] %>
-        <div class="mb-4 rounded border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"><%= flash[:notice] %></div>
+        <div class="mb-6 bg-secondary-container text-on-secondary-container px-6 py-4 rounded-xl flex items-center justify-between shadow-sm border border-secondary/10">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-secondary">check_circle</span>
+            <span class="font-medium text-sm"><%= flash[:notice] %></span>
+          </div>
+        </div>
       <% end %>
 
       <% if flash[:alert] %>
-        <div class="mb-4 rounded border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-800"><%= flash[:alert] %></div>
+        <div class="mb-6 bg-error-container text-on-surface px-6 py-4 rounded-xl flex items-center justify-between shadow-sm">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-error">error</span>
+            <span class="font-medium text-sm"><%= flash[:alert] %></span>
+          </div>
+        </div>
       <% end %>
 
       <%= yield %>

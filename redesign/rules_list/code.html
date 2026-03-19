@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Email Classifier - Rules</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary-fixed": "#dae2fd",
+              "tertiary-dim": "#a90030",
+              "secondary-dim": "#005f41",
+              "inverse-on-surface": "#999da1",
+              "surface-container-high": "#ddeaf3",
+              "primary-fixed-dim": "#ccd4ee",
+              "surface-container-highest": "#d5e5ef",
+              "surface-container": "#e5eff7",
+              "secondary-fixed-dim": "#76eab6",
+              "on-error": "#fff7f6",
+              "surface-variant": "#d5e5ef",
+              "primary-dim": "#4a5268",
+              "on-error-container": "#752121",
+              "on-tertiary": "#fff7f6",
+              "inverse-surface": "#0a0f12",
+              "on-surface-variant": "#52616a",
+              "error-dim": "#4e0309",
+              "error": "#9f403d",
+              "surface-tint": "#565e74",
+              "surface-dim": "#cadde9",
+              "on-primary-fixed": "#373f54",
+              "surface-bright": "#f6fafe",
+              "surface-container-lowest": "#ffffff",
+              "error-container": "#fe8983",
+              "background": "#f6fafe",
+              "surface": "#f6fafe",
+              "on-secondary-fixed-variant": "#006948",
+              "on-tertiary-fixed": "#000000",
+              "outline-variant": "#a4b4be",
+              "on-primary": "#f7f7ff",
+              "inverse-primary": "#dae2fd",
+              "on-background": "#26343d",
+              "on-surface": "#26343d",
+              "on-primary-container": "#4a5167",
+              "secondary": "#006d4b",
+              "primary": "#565e74",
+              "surface-container-low": "#eef4fa",
+              "on-primary-fixed-variant": "#535b71",
+              "on-secondary-container": "#005e40",
+              "on-secondary": "#e6ffef",
+              "secondary-fixed": "#85f8c4",
+              "primary-container": "#dae2fd",
+              "tertiary": "#c00037",
+              "on-tertiary-fixed-variant": "#220004",
+              "tertiary-fixed": "#fc3559",
+              "on-tertiary-container": "#000000",
+              "secondary-container": "#85f8c4",
+              "tertiary-fixed-dim": "#e9254d"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col">
+<!-- TopNavBar Shell -->
+<header class="bg-slate-50 dark:bg-slate-900 sticky top-0 z-40">
+<div class="flex justify-between items-center w-full px-6 py-3 max-w-7xl mx-auto">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Email Classifier</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-slate-900 dark:text-white font-semibold border-b-2 border-slate-900 dark:border-white pb-1" href="#">Rules</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors" href="#">Activity</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors" href="#">Settings</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden lg:block relative group">
+<input class="bg-slate-100 dark:bg-slate-800 border-none rounded-md px-4 py-1.5 text-sm w-64 focus:ring-2 focus:ring-primary" placeholder="Search rules..." type="text"/>
+</div>
+<button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+<img alt="User profile avatar" class="w-8 h-8 rounded-full object-cover ring-2 ring-surface" data-alt="User profile avatar close up" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPnIcWXi0w-U2RwKhDTh1OE7x6MTGlPta8bHXzqFlk6w5KVtVyvy2gLhMOBemoVnKuE-LJk_-J_NN8eGQU8sXbEqmpjJYtakXrOhRdsNXowptMEq_Oqixqkh7eDNOBnoIjWYk4WRQTQ7exAVOxdJEAMibnFrDDZcI4Jy-HYK53AW-e2Q3ghb_lfq8W5pLxrIuqCvPui2l9CQjBrmrEVWgDxZrhigowExaRNZZuT5BWJQD4V4LHCJm71PtQZPg4jSGH7UYppQ521FZ6"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar (Hidden on desktop for single column layout as requested, but logic remains) -->
+<div class="flex-1 flex flex-col max-w-7xl w-full mx-auto px-6 pt-8 pb-24 lg:pb-8">
+<!-- Success Flash Message -->
+<div class="mb-10 animate-fade-in">
+<div class="bg-secondary-container text-on-secondary-container px-6 py-4 rounded-xl flex items-center justify-between shadow-sm border border-secondary/10">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary" data-icon="check_circle">check_circle</span>
+<span class="font-medium text-sm">Rule 'Newsletter Cleanup' updated successfully</span>
+</div>
+<button class="text-on-secondary-container/60 hover:text-on-secondary-container">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+</div>
+<!-- Main Header -->
+<div class="flex items-end justify-between mb-8">
+<div>
+<h1 class="text-4xl font-extrabold tracking-tight text-on-surface mb-2">Automation Rules</h1>
+<p class="text-on-surface-variant max-w-2xl">Define how the Digital Curator handles incoming traffic. Rules are processed in the order displayed below.</p>
+</div>
+<button class="bg-gradient-to-r from-primary to-primary-dim text-on-primary px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2 shadow-lg shadow-primary/10 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-lg" data-icon="add">add</span>
+                Create New Rule
+            </button>
+</div>
+<!-- Active Rules Section -->
+<section class="mb-16">
+<div class="flex items-center gap-3 mb-6">
+<h2 class="text-lg font-bold text-on-surface">Active Rules</h2>
+<span class="bg-secondary-fixed text-on-secondary-fixed px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">3 Total</span>
+</div>
+<div class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-[0_4px_30px_0_rgba(0,0,0,0.02)]">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant text-[11px] font-bold uppercase tracking-widest">
+<th class="pl-6 py-4 w-12"></th>
+<th class="px-4 py-4">Rule Name</th>
+<th class="px-4 py-4">Conditions</th>
+<th class="px-4 py-4">Actions</th>
+<th class="px-4 py-4">Times Applied</th>
+<th class="pr-6 py-4 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container">
+<!-- Rule Row 1 -->
+<tr class="group hover:bg-surface-container-low transition-colors">
+<td class="pl-6 py-5">
+<span class="material-symbols-outlined text-outline-variant opacity-0 group-hover:opacity-100 cursor-grab transition-opacity" data-icon="drag_indicator">drag_indicator</span>
+</td>
+<td class="px-4 py-5">
+<div class="flex flex-col">
+<span class="font-bold text-on-surface text-sm">Newsletter Cleanup</span>
+<span class="text-xs text-on-surface-variant">Last edited 2h ago</span>
+</div>
+</td>
+<td class="px-4 py-5">
+<span class="inline-flex items-center px-2 py-1 bg-surface-container-high rounded text-[11px] font-semibold text-on-surface">3 Filters</span>
+</td>
+<td class="px-4 py-5">
+<span class="inline-flex items-center px-2 py-1 bg-surface-container-high rounded text-[11px] font-semibold text-on-surface">2 Actions</span>
+</td>
+<td class="px-4 py-5 font-medium text-sm tabular-nums text-on-surface-variant">
+                                1,248
+                            </td>
+<td class="pr-6 py-5 text-right space-x-2">
+<button class="p-2 hover:bg-surface-container-highest rounded-lg text-on-surface-variant hover:text-on-surface transition-all">
+<span class="material-symbols-outlined text-xl" data-icon="visibility">visibility</span>
+</button>
+<button class="p-2 hover:bg-surface-container-highest rounded-lg text-on-surface-variant hover:text-on-surface transition-all">
+<span class="material-symbols-outlined text-xl" data-icon="edit">edit</span>
+</button>
+</td>
+</tr>
+<!-- Rule Row 2 -->
+<tr class="group hover:bg-surface-container-low transition-colors">
+<td class="pl-6 py-5">
+<span class="material-symbols-outlined text-outline-variant opacity-0 group-hover:opacity-100 cursor-grab transition-opacity" data-icon="drag_indicator">drag_indicator</span>
+</td>
+<td class="px-4 py-5">
+<div class="flex flex-col">
+<span class="font-bold text-on-surface text-sm">Priority Client Routing</span>
+<span class="text-xs text-on-surface-variant">Created yesterday</span>
+</div>
+</td>
+<td class="px-4 py-5">
+<span class="inline-flex items-center px-2 py-1 bg-surface-container-high rounded text-[11px] font-semibold text-on-surface">1 Filter</span>
+</td>
+<td class="px-4 py-5">
+<span class="inline-flex items-center px-2 py-1 bg-surface-container-high rounded text-[11px] font-semibold text-on-surface">4 Actions</span>
+</td>
+<td class="px-4 py-5 font-medium text-sm tabular-nums text-on-surface-variant">
+                                89
+                            </td>
+<td class="pr-6 py-5 text-right space-x-2">
+<button class="p-2 hover:bg-surface-container-highest rounded-lg text-on-surface-variant hover:text-on-surface transition-all">
+<span class="material-symbols-outlined text-xl" data-icon="visibility">visibility</span>
+</button>
+<button class="p-2 hover:bg-surface-container-highest rounded-lg text-on-surface-variant hover:text-on-surface transition-all">
+<span class="material-symbols-outlined text-xl" data-icon="edit">edit</span>
+</button>
+</td>
+</tr>
+<!-- Rule Row 3 -->
+<tr class="group hover:bg-surface-container-low transition-colors">
+<td class="pl-6 py-5">
+<span class="material-symbols-outlined text-outline-variant opacity-0 group-hover:opacity-100 cursor-grab transition-opacity" data-icon="drag_indicator">drag_indicator</span>
+</td>
+<td class="px-4 py-5">
+<div class="flex flex-col">
+<span class="font-bold text-on-surface text-sm">Invoice Auto-Archive</span>
+<span class="text-xs text-on-surface-variant">Updated 3 days ago</span>
+</div>
+</td>
+<td class="px-4 py-5">
+<span class="inline-flex items-center px-2 py-1 bg-surface-container-high rounded text-[11px] font-semibold text-on-surface">2 Filters</span>
+</td>
+<td class="px-4 py-5">
+<span class="inline-flex items-center px-2 py-1 bg-surface-container-high rounded text-[11px] font-semibold text-on-surface">1 Action</span>
+</td>
+<td class="px-4 py-5 font-medium text-sm tabular-nums text-on-surface-variant">
+                                412
+                            </td>
+<td class="pr-6 py-5 text-right space-x-2">
+<button class="p-2 hover:bg-surface-container-highest rounded-lg text-on-surface-variant hover:text-on-surface transition-all">
+<span class="material-symbols-outlined text-xl" data-icon="visibility">visibility</span>
+</button>
+<button class="p-2 hover:bg-surface-container-highest rounded-lg text-on-surface-variant hover:text-on-surface transition-all">
+<span class="material-symbols-outlined text-xl" data-icon="edit">edit</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Inactive Rules Section -->
+<section class="opacity-60 grayscale-[0.5] saturate-50 transition-opacity hover:opacity-100 hover:grayscale-0 hover:saturate-100">
+<div class="flex items-center gap-3 mb-6">
+<h2 class="text-lg font-bold text-on-surface-variant">Inactive Rules</h2>
+<span class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">1 Total</span>
+</div>
+<div class="bg-surface-container-low rounded-2xl overflow-hidden border border-surface-container border-dashed">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="text-on-surface-variant text-[11px] font-bold uppercase tracking-widest">
+<th class="pl-6 py-4 w-12"></th>
+<th class="px-4 py-4">Rule Name</th>
+<th class="px-4 py-4">Conditions</th>
+<th class="px-4 py-4">Actions</th>
+<th class="px-4 py-4">Times Applied</th>
+<th class="pr-6 py-4 text-right">Actions</th>
+</tr>
+</thead>
+<tbody>
+<tr class="group">
+<td class="pl-6 py-5">
+<span class="material-symbols-outlined text-outline-variant" data-icon="lock">lock</span>
+</td>
+<td class="px-4 py-5">
+<div class="flex flex-col">
+<span class="font-bold text-on-surface-variant text-sm italic">Holiday Auto-Responder</span>
+<span class="text-xs text-outline">Disabled Jan 05</span>
+</div>
+</td>
+<td class="px-4 py-5">
+<span class="inline-flex items-center px-2 py-1 bg-surface-container rounded text-[11px] font-medium text-outline">1 Filter</span>
+</td>
+<td class="px-4 py-5">
+<span class="inline-flex items-center px-2 py-1 bg-surface-container rounded text-[11px] font-medium text-outline">1 Action</span>
+</td>
+<td class="px-4 py-5 font-medium text-sm tabular-nums text-outline">
+                                0
+                            </td>
+<td class="pr-6 py-5 text-right space-x-2">
+<button class="p-2 hover:bg-surface-container-highest rounded-lg text-on-surface-variant transition-all">
+<span class="material-symbols-outlined text-xl" data-icon="restore">restore</span>
+</button>
+<button class="p-2 hover:bg-surface-container-highest rounded-lg text-on-surface-variant transition-all">
+<span class="material-symbols-outlined text-xl" data-icon="delete">delete</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+<!-- BottomNavBar for Mobile Shell -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-slate-100 dark:border-slate-800 shadow-[0_-4px_20px_0_rgba(0,0,0,0.05)] z-50 rounded-t-2xl">
+<a class="flex flex-col items-center justify-center text-emerald-600 dark:text-emerald-400 scale-110" href="#">
+<span class="material-symbols-outlined" data-icon="list_alt">list_alt</span>
+<span class="text-[10px] font-medium font-label">Rules</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-600" href="#">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+<span class="text-[10px] font-medium font-label">Detail</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-600" href="#">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+<span class="text-[10px] font-medium font-label">Editor</span>
+</a>
+</nav>
+<!-- FAB for Contextual Action (Suppressed as per rules on detail-like screens, but active for "Rules List") -->
+<button class="fixed bottom-24 right-6 lg:bottom-10 lg:right-10 bg-primary text-on-primary w-14 h-14 rounded-full shadow-2xl flex items-center justify-center group hover:scale-105 transition-transform md:hidden">
+<span class="material-symbols-outlined text-2xl" data-icon="add">add</span>
+</button>
+</body></html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Rule Editor | Email Classifier</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-fixed": "#dae2fd",
+                        "tertiary-dim": "#a90030",
+                        "secondary-dim": "#005f41",
+                        "inverse-on-surface": "#999da1",
+                        "surface-container-high": "#ddeaf3",
+                        "primary-fixed-dim": "#ccd4ee",
+                        "surface-container-highest": "#d5e5ef",
+                        "surface-container": "#e5eff7",
+                        "secondary-fixed-dim": "#76eab6",
+                        "on-error": "#fff7f6",
+                        "surface-variant": "#d5e5ef",
+                        "primary-dim": "#4a5268",
+                        "on-error-container": "#752121",
+                        "on-tertiary": "#fff7f6",
+                        "inverse-surface": "#0a0f12",
+                        "on-surface-variant": "#52616a",
+                        "error-dim": "#4e0309",
+                        "error": "#9f403d",
+                        "surface-tint": "#565e74",
+                        "surface-dim": "#cadde9",
+                        "on-primary-fixed": "#373f54",
+                        "surface-bright": "#f6fafe",
+                        "surface-container-lowest": "#ffffff",
+                        "error-container": "#fe8983",
+                        "background": "#f6fafe",
+                        "surface": "#f6fafe",
+                        "on-secondary-fixed-variant": "#006948",
+                        "on-tertiary-fixed": "#000000",
+                        "outline-variant": "#a4b4be",
+                        "on-primary": "#f7f7ff",
+                        "inverse-primary": "#dae2fd",
+                        "on-background": "#26343d",
+                        "on-surface": "#26343d",
+                        "on-primary-container": "#4a5167",
+                        "secondary": "#006d4b",
+                        "primary": "#565e74",
+                        "surface-container-low": "#eef4fa",
+                        "on-primary-fixed-variant": "#535b71",
+                        "on-secondary-container": "#005e40",
+                        "on-secondary": "#e6ffef",
+                        "secondary-fixed": "#85f8c4",
+                        "primary-container": "#dae2fd",
+                        "tertiary": "#c00037",
+                        "on-tertiary-fixed-variant": "#220004",
+                        "tertiary-container": "#fc3559",
+                        "outline": "#6e7d86",
+                        "on-secondary-fixed": "#004931",
+                        "tertiary-fixed": "#fc3559",
+                        "on-tertiary-container": "#000000",
+                        "secondary-container": "#85f8c4",
+                        "tertiary-fixed-dim": "#e9254d"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: #f6fafe; color: #26343d; }
+        h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- TopNavBar -->
+<header class="bg-slate-50 dark:bg-slate-900 sticky top-0 z-50">
+<div class="flex justify-between items-center w-full px-6 py-3 max-w-7xl mx-auto">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Email Classifier</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors" href="#">Rules</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors" href="#">Activity</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors" href="#">Settings</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden">
+<img alt="User profile avatar" data-alt="User profile circular avatar image" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxUZUt-OjZX0jJKuvuAqf-xUEN2q-PqVT90H8CKXD5VX1wyNS_bkOZj8vJ2FlS7RFeyDiPalmrnk-5U5gXzk_qDS9DCxcK4B2ujsyAWiX2cP3ox-rjf1rNz9xP2u1Y3tS5dZsZpdJ0BZlluGHVNhK_xqXcdde3mEz6wKBrimz8pK5H8fTuAlRPi684S4JcklSJkqJgCG7Koy79C31G1qs9huHQWOiryxiX6uq0yWrvzeRODVoCW8OGvkZDlBzj88qVY9SSxG277Sph"/>
+</div>
+</div>
+</div>
+</header>
+<div class="flex max-w-7xl mx-auto min-h-[calc(100-64px)]">
+<!-- SideNavBar (Desktop Only) -->
+<aside class="hidden lg:flex flex-col h-full py-4 gap-4 bg-slate-50 dark:bg-slate-950 h-screen w-64 border-r-0">
+<div class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">auto_awesome</span>
+</div>
+<div>
+<p class="text-lg font-black text-slate-900 dark:text-slate-100">The Curator</p>
+<p class="text-xs text-on-surface-variant">Editorial Workspace</p>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-1 px-2">
+<a class="flex items-center gap-3 px-4 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 mx-2 my-1 rounded-lg hover:translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm rounded-lg mx-2 my-1" href="#">
+<span class="material-symbols-outlined">rule</span>
+<span class="font-medium">Active Rules</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 mx-2 my-1 rounded-lg hover:translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-medium">Archived</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 mx-2 my-1 rounded-lg hover:translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-medium">Analytics</span>
+</a>
+</div>
+<div class="mt-auto px-4 space-y-4">
+<button class="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-primary to-primary-dim text-on-primary rounded-xl font-semibold shadow-lg active:scale-95 transition-all">
+<span class="material-symbols-outlined">add</span>
+<span>Create New Rule</span>
+</button>
+<div class="border-t border-surface-container py-4 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 mx-2 my-1 rounded-lg" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 mx-2 my-1 rounded-lg" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+<span>Support</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 p-6 md:p-10 mb-24 lg:mb-0">
+<div class="max-w-4xl mx-auto">
+<div class="flex items-center justify-between mb-8">
+<div>
+<h1 class="text-3xl font-extrabold tracking-tight text-on-surface">Rule Editor</h1>
+<p class="text-on-surface-variant mt-1">Configure automated logic for your incoming messages.</p>
+</div>
+<div class="flex items-center gap-2 px-3 py-1.5 bg-secondary-container text-on-secondary-container rounded-full text-sm font-medium">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                        Drafting Mode
+                    </div>
+</div>
+<div class="space-y-10">
+<!-- Basics Section -->
+<section class="bg-surface-container-lowest p-8 rounded-2xl shadow-sm">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary">info</span>
+<h2 class="text-xl font-bold">Basics</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<div class="md:col-span-8">
+<label class="block text-sm font-semibold text-on-surface-variant mb-2">Rule Name</label>
+<input class="w-full bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 px-4 py-3 rounded-t-lg transition-colors" placeholder="e.g., Forward Invoices to Finance" type="text"/>
+</div>
+<div class="md:col-span-2">
+<label class="block text-sm font-semibold text-on-surface-variant mb-2">Priority</label>
+<input class="w-full bg-surface-container-low border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 px-4 py-3 rounded-t-lg transition-colors" type="number" value="10"/>
+</div>
+<div class="md:col-span-2 flex items-end pb-3">
+<label class="flex items-center gap-3 cursor-pointer group">
+<input checked="" class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/>
+<span class="text-sm font-semibold text-on-surface-variant group-hover:text-on-surface">Active</span>
+</label>
+</div>
+</div>
+</section>
+<!-- Conditions Section -->
+<section class="bg-surface-container-lowest p-8 rounded-2xl shadow-sm">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">filter_list</span>
+<h2 class="text-xl font-bold">Conditions Builder</h2>
+</div>
+<div class="inline-flex bg-surface-container-low p-1 rounded-xl">
+<button class="px-4 py-1.5 text-sm font-semibold rounded-lg bg-white shadow-sm text-on-surface">Match all conditions</button>
+<button class="px-4 py-1.5 text-sm font-semibold rounded-lg text-on-surface-variant hover:text-on-surface transition-colors">Match any condition</button>
+</div>
+</div>
+<div class="space-y-4">
+<!-- Dynamic Row 1 -->
+<div class="flex flex-col md:flex-row items-start md:items-center gap-4 bg-surface-container-low/50 p-4 rounded-xl group relative">
+<div class="w-full md:w-1/4">
+<select class="w-full bg-white border-0 text-sm py-2.5 px-3 rounded-lg focus:ring-2 focus:ring-primary/20">
+<option>sender</option>
+<option>subject</option>
+<option>body</option>
+</select>
+</div>
+<div class="w-full md:w-1/4">
+<select class="w-full bg-white border-0 text-sm py-2.5 px-3 rounded-lg focus:ring-2 focus:ring-primary/20">
+<option>contains</option>
+<option>equals</option>
+<option>starts with</option>
+<option>ends with</option>
+</select>
+</div>
+<div class="w-full md:flex-1">
+<input class="w-full bg-white border-0 text-sm py-2.5 px-3 rounded-lg focus:ring-2 focus:ring-primary/20" placeholder="Value..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<label class="flex items-center gap-2 whitespace-nowrap cursor-pointer">
+<div class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
+</div>
+<span class="text-xs font-medium text-on-surface-variant">Case-sensitive</span>
+</label>
+<button class="p-1.5 text-error opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-lg">delete</span>
+</button>
+</div>
+</div>
+<!-- Add Button -->
+<button class="flex items-center gap-2 text-sm font-bold text-primary hover:bg-primary-container/20 px-4 py-2 rounded-lg transition-colors mt-4">
+<span class="material-symbols-outlined text-lg">add_circle</span>
+                                Add Condition
+                            </button>
+</div>
+</section>
+<!-- Actions Section -->
+<section class="bg-surface-container-lowest p-8 rounded-2xl shadow-sm">
+<div class="flex items-center gap-3 mb-8">
+<span class="material-symbols-outlined text-primary">bolt</span>
+<h2 class="text-xl font-bold">Actions Builder</h2>
+</div>
+<div class="space-y-4">
+<!-- Action Row 1 -->
+<div class="flex flex-col md:flex-row items-start md:items-center gap-4 bg-surface-container-low/50 p-4 rounded-xl group">
+<div class="w-full md:w-1/3">
+<select class="w-full bg-white border-0 text-sm py-2.5 px-3 rounded-lg focus:ring-2 focus:ring-primary/20">
+<option>add_label</option>
+<option>remove_label</option>
+<option>mark_read</option>
+<option>trash</option>
+</select>
+</div>
+<div class="w-full md:flex-1">
+<input class="w-full bg-white border-0 text-sm py-2.5 px-3 rounded-lg focus:ring-2 focus:ring-primary/20" placeholder="Label text..." type="text" value="Finances"/>
+</div>
+<button class="p-1.5 text-error opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-lg">delete</span>
+</button>
+</div>
+<button class="flex items-center gap-2 text-sm font-bold text-primary hover:bg-primary-container/20 px-4 py-2 rounded-lg transition-colors mt-4">
+<span class="material-symbols-outlined text-lg">add_circle</span>
+                                Add Action
+                            </button>
+</div>
+</section>
+</div>
+</div>
+</main>
+</div>
+<!-- Sticky Footer / Bottom Actions -->
+<div class="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-surface-container-high py-4 px-6 z-50">
+<div class="max-w-4xl mx-auto flex items-center justify-between">
+<button class="flex items-center gap-2 text-on-surface-variant hover:text-on-surface font-semibold px-4 py-2.5 rounded-xl hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-xl">close</span>
+                Discard Changes
+            </button>
+<div class="flex items-center gap-3">
+<button class="bg-surface-container-highest text-on-surface font-bold px-6 py-2.5 rounded-xl hover:bg-surface-container-high transition-colors">
+                    Save
+                </button>
+<button class="bg-gradient-to-r from-primary to-primary-dim text-on-primary font-bold px-8 py-2.5 rounded-xl shadow-lg hover:shadow-primary/20 active:scale-95 transition-all">
+                    Save and Apply Now
+                </button>
+</div>
+</div>
+</div>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl z-50 shadow-[0_-4px_20px_0_rgba(0,0,0,0.05)] border-t border-slate-100 dark:border-slate-800">
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-600" href="#">
+<span class="material-symbols-outlined">list_alt</span>
+<span class="text-[10px] font-medium mt-1">Rules</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-600" href="#">
+<span class="material-symbols-outlined">visibility</span>
+<span class="text-[10px] font-medium mt-1">Detail</span>
+</a>
+<a class="flex flex-col items-center justify-center text-emerald-600 dark:text-emerald-400 scale-110" href="#">
+<span class="material-symbols-outlined">edit_note</span>
+<span class="text-[10px] font-medium mt-1">Editor</span>
+</a>
+</nav>
+</body></html>
