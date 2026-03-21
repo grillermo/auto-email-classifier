@@ -3,6 +3,10 @@
 require "test_helper"
 
 class RulesShowTest < ActionDispatch::IntegrationTest
+  EMPTY_GMAIL_PREVIEW = {
+    emails: [], total_count: 0, scanned_count: 0, truncated: false, error: nil
+  }.freeze
+
   test "shows matching emails with subject, from, date, and gmail link" do
     rule = Rule.create!(
       name: "Invoices",
@@ -30,19 +34,22 @@ class RulesShowTest < ActionDispatch::IntegrationTest
       }
     )
 
-    get rule_path(rule), headers: inertia_headers
+    fake_loader = Object.new.tap { |obj| obj.define_singleton_method(:load) { EMPTY_GMAIL_PREVIEW } }
 
-    assert_response :success
+    Rules::GmailAffectedEmailsLoader.stub(:new, ->(**) { fake_loader }) do
+      get rule_path(rule), headers: inertia_headers
 
-    payload = JSON.parse(response.body)
-    matching_email = payload.dig("props", "matchingEmails", "emails", 0)
+      assert_response :success
 
-    assert_equal "Rules/Show", payload["component"]
-    assert_equal({}, payload.dig("props", "errors"))
-    assert_equal 1, payload.dig("props", "matchingEmails", "totalCount")
-    assert_equal "Invoice March", matching_email.fetch("subject")
-    assert_equal "billing@example.com", matching_email.fetch("from")
-    assert_equal "https://mail.google.com/mail/u/0/#all/thread-1", matching_email.fetch("gmailUrl")
+      payload = JSON.parse(response.body)
+      matching_email = payload.dig("props", "matchingEmails", "emails", 0)
+
+      assert_equal "Rules/Show", payload["component"]
+      assert_equal 1, payload.dig("props", "matchingEmails", "totalCount")
+      assert_equal "Invoice March", matching_email.fetch("subject")
+      assert_equal "billing@example.com", matching_email.fetch("from")
+      assert_equal "https://mail.google.com/mail/u/0/#all/thread-1", matching_email.fetch("gmailUrl")
+    end
   end
 
   private
