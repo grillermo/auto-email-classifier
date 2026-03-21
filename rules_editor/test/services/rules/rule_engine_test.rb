@@ -123,4 +123,97 @@ class RulesRuleEngineTest < ActiveSupport::TestCase
     assert_equal "Fri, 07 Mar 2026 13:20:00 +0000", application.result.dig("message", "date")
     assert_equal "thread-123", application.result.dig("message", "thread_id")
   end
+
+  test "returns matched: false when no rule matches the message" do
+    rule = Rule.create!(
+      name: "Specific",
+      priority: 1,
+      definition: {
+        match_mode: "all",
+        conditions: [{ field: "sender", operator: "contains", value: "vip@" }],
+        actions: [{ type: "mark_read" }]
+      }
+    )
+
+    result = Rules::RuleEngine.new(gmail_client: Object.new).process_message!(
+      message: { id: "msg-1", from: "nobody@example.com", subject: "hi", body: "" },
+      rules_scope: [rule]
+    )
+
+    assert_equal false, result[:matched]
+  end
+
+  test "stops at the first matching rule and does not evaluate later rules" do
+    rule_one = Rule.create!(
+      name: "First",
+      priority: 1,
+      definition: {
+        match_mode: "all",
+        conditions: [{ field: "sender", operator: "contains", value: "billing@" }],
+        actions: [{ type: "mark_read" }]
+      }
+    )
+
+    rule_two = Rule.create!(
+      name: "Second",
+      priority: 2,
+      definition: {
+        match_mode: "all",
+        conditions: [{ field: "sender", operator: "contains", value: "billing@" }],
+        actions: [{ type: "trash" }]
+      }
+    )
+
+    gmail_client = Class.new do
+      attr_reader :mark_read_ids, :trash_ids
+      def initialize
+        @mark_read_ids = []
+        @trash_ids = []
+      end
+      def mark_message_read(id) = @mark_read_ids << id
+      def trash_message(id) = @trash_ids << id
+    end.new
+
+    Rules::RuleEngine.new(gmail_client: gmail_client).process_message!(
+      message: { id: "msg-1", from: "billing@example.com", subject: "inv", body: "" },
+      rules_scope: [rule_one, rule_two]
+    )
+
+    assert_equal ["msg-1"], gmail_client.mark_read_ids
+    assert_empty gmail_client.trash_ids
+  end
+
+  test "live run with add_label action calls Gmail client and records application" do
+    rule = Rule.create!(
+      name: "Labels",
+      priority: 1,
+      definition: {
+        match_mode: "all",
+        conditions: [{ field: "sender", operator: "contains", value: "billing@" }],
+        actions: [{ type: "add_label", label: "Finance" }]
+      }
+    )
+
+    gmail_client = Class.new do
+      attr_reader :ensured_labels, :modifications
+      def initialize
+        @ensured_labels = []
+        @modifications = []
+      end
+      def ensure_label_id(name) = @ensured_labels << name and "label-id-#{name}"
+      def modify_message(message_id:, add_label_ids: [], remove_label_ids: [])
+        @modifications << { message_id: message_id, add: add_label_ids, remove: remove_label_ids }
+      end
+    end.new
+
+    assert_difference "RuleApplication.count", 1 do
+      Rules::RuleEngine.new(gmail_client: gmail_client).process_message!(
+        message: { id: "msg-2", from: "billing@example.com", subject: "Invoice", body: "" },
+        rules_scope: [rule]
+      )
+    end
+
+    assert_includes gmail_client.ensured_labels, "Finance"
+    assert_equal "msg-2", gmail_client.modifications.first[:message_id]
+  end
 end
