@@ -10,3 +10,4 @@ mail_listener/log/*
 env
 .env
 .DS_Store
+coverage
