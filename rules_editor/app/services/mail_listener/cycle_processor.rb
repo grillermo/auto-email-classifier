@@ -4,15 +4,17 @@ module MailListener
   class CycleProcessor
     DEFAULT_QUERY = "in:inbox"
 
-    def initialize(dry_run: false, gmail_client: Gmail::Client.new)
+    def initialize(gmail_authentication:, dry_run: false)
+      @gmail_authentication = gmail_authentication
+      @user = gmail_authentication.user
+      @gmail_client = Gmail::Client.for_authentication(gmail_authentication)
       @dry_run = dry_run
-      @gmail_client = gmail_client
     end
 
     def process!
-      forward_result = Rules::AutoRulesCreator.new(gmail_client: gmail_client, dry_run: dry_run?).process!
+      forward_result = Rules::AutoRulesCreator.new(gmail_authentication: gmail_authentication, dry_run: dry_run?).process!
 
-      rules = Rule.active.ordered.to_a
+      rules = user.rules.active.ordered.to_a
       message_ids = gmail_client.list_message_ids(query: primary_query, max_results: 500)
 
       puts "[listener] cycle: mode=#{dry_run? ? "dry-run" : "live"}, messages=#{message_ids.length}, active_rules=#{rules.length}, auto_created=#{forward_result[:created]}"
@@ -38,23 +40,23 @@ module MailListener
 
     private
 
+    attr_reader :gmail_client, :gmail_authentication, :user
+
     def send_auth_error_ntfy_notification
-      channel = ENV.fetch("NTFY_CHANNEL", nil)
-      return unless channel
+      ntfy_channel = user.ntfy_channel
+      return unless ntfy_channel&.channel.present?
 
       body = <<~BODY
         Gmail Authorization Failed.
 
         The automatic email listener cycle failed because it could not authorize with Google.
-        Please update your Gmail API token to continue processing emails.
+        Please sign in and re-authorize the Gmail account #{gmail_authentication.email}.
       BODY
 
-      HTTP.post("https://ntfy.sh/#{channel}", body: body)
+      HTTP.post(ntfy_channel.notification_url, body: body)
     rescue StandardError => e
       puts "[listener] failed to send ntfy notification: #{e.class} #{e.message}"
     end
-
-    attr_reader :gmail_client
 
     def dry_run?
       @dry_run

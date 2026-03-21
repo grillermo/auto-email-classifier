@@ -34,8 +34,13 @@ class MailListenerCycleProcessorTest < ActiveSupport::TestCase
     end
   end
 
+  setup do
+    @user = User.create!(email: "test@example.com")
+    @gmail_auth = GmailAuthentication.new(user: @user, email: "gmail@example.com")
+  end
+
   def create_rule(value: "billing@")
-    Rule.create!(
+    @user.rules.create!(
       name: "Billing",
       priority: 1,
       active: true,
@@ -53,11 +58,11 @@ class MailListenerCycleProcessorTest < ActiveSupport::TestCase
       message_ids: ["msg-1"],
       messages: { "msg-1" => { id: "msg-1", from: "billing@example.com", subject: "inv", body: "" } }
     )
-    # FakeGmailClient returns [] for the classify query (label:*) so AutoRulesCreator
-    # does nothing. The inbox query returns ["msg-1"] which gets processed by RuleEngine.
 
-    capture_io do
-      MailListener::CycleProcessor.new(gmail_client: client).process!
+    Gmail::Client.stub(:for_authentication, client) do
+      capture_io do
+        MailListener::CycleProcessor.new(gmail_authentication: @gmail_auth).process!
+      end
     end
 
     assert RuleApplication.exists?(gmail_message_id: "msg-1", rule_id: rule.id)
@@ -70,9 +75,11 @@ class MailListenerCycleProcessorTest < ActiveSupport::TestCase
       messages: { "msg-1" => { id: "msg-1", from: "billing@example.com", subject: "inv", body: "" } }
     )
 
-    assert_no_difference "RuleApplication.count" do
-      capture_io do
-        MailListener::CycleProcessor.new(gmail_client: client, dry_run: true).process!
+    Gmail::Client.stub(:for_authentication, client) do
+      assert_no_difference "RuleApplication.count" do
+        capture_io do
+          MailListener::CycleProcessor.new(gmail_authentication: @gmail_auth, dry_run: true).process!
+        end
       end
     end
   end
@@ -83,10 +90,11 @@ class MailListenerCycleProcessorTest < ActiveSupport::TestCase
       def profile = Struct.new(:email_address).new("x@example.com")
     end.new
 
-    # Should not raise
-    output = capture_io do
-      assert_nothing_raised do
-        MailListener::CycleProcessor.new(gmail_client: exploding_client).process!
+    output = Gmail::Client.stub(:for_authentication, exploding_client) do
+      capture_io do
+        assert_nothing_raised do
+          MailListener::CycleProcessor.new(gmail_authentication: @gmail_auth).process!
+        end
       end
     end.first
 
@@ -94,6 +102,8 @@ class MailListenerCycleProcessorTest < ActiveSupport::TestCase
   end
 
   test "process! sends ntfy notification on authorization error when channel is configured" do
+    @user.create_ntfy_channel!(channel: "test-channel")
+
     auth_error_client = Class.new do
       def list_message_ids(query:, max_results:)
         raise RuntimeError, "Authorization failed — please re-authenticate"
@@ -102,13 +112,12 @@ class MailListenerCycleProcessorTest < ActiveSupport::TestCase
     end.new
 
     ntfy_called = false
-    ENV["NTFY_CHANNEL"] = "test-channel"
 
-    original_post = HTTP.method(:post)
-    HTTP.define_singleton_method(:post) { |_url, **_opts| ntfy_called = true }
-    begin
-      capture_io do
-        MailListener::CycleProcessor.new(gmail_client: auth_error_client).process!
+    Gmail::Client.stub(:for_authentication, auth_error_client) do
+      HTTP.stub(:post, ->(_url, **_opts) { ntfy_called = true }) do
+        capture_io do
+          MailListener::CycleProcessor.new(gmail_authentication: @gmail_auth).process!
+        end
       end
     ensure
       HTTP.define_singleton_method(:post, &original_post)
@@ -118,7 +127,7 @@ class MailListenerCycleProcessorTest < ActiveSupport::TestCase
     assert ntfy_called, "Expected HTTP.post to be called for ntfy notification"
   end
 
-  test "skips ntfy notification when NTFY_CHANNEL is not set" do
+  test "skips ntfy notification when user has no ntfy_channel" do
     auth_error_client = Class.new do
       def list_message_ids(query:, max_results:)
         raise RuntimeError, "Authorization failed"
@@ -126,14 +135,13 @@ class MailListenerCycleProcessorTest < ActiveSupport::TestCase
       def profile = Struct.new(:email_address).new("x@example.com")
     end.new
 
-    ENV.delete("NTFY_CHANNEL")
     ntfy_called = false
 
-    original_post = HTTP.method(:post)
-    HTTP.define_singleton_method(:post) { |_url, **_opts| ntfy_called = true }
-    begin
-      capture_io do
-        MailListener::CycleProcessor.new(gmail_client: auth_error_client).process!
+    Gmail::Client.stub(:for_authentication, auth_error_client) do
+      HTTP.stub(:post, ->(_url, **_opts) { ntfy_called = true }) do
+        capture_io do
+          MailListener::CycleProcessor.new(gmail_authentication: @gmail_auth).process!
+        end
       end
     ensure
       HTTP.define_singleton_method(:post, &original_post)
