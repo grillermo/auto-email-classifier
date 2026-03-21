@@ -4,8 +4,10 @@ module Rules
   class AutoRulesCreator
     DEFAULT_LABEL_TO_CLASSIFY = "classify"
 
-    def initialize(gmail_client: Gmail::Client.new, dry_run: false)
-      @gmail_client = gmail_client
+    def initialize(gmail_authentication:, dry_run: false)
+      @gmail_authentication = gmail_authentication
+      @gmail_client = Gmail::Client.for_authentication(gmail_authentication)
+      @user = gmail_authentication.user
       @dry_run = dry_run
     end
 
@@ -24,7 +26,7 @@ module Rules
 
       message_ids.each do |message_id|
         log_info("processing message_id=#{message_id}")
-        if AutoRuleEvent.exists?(source_gmail_message_id: message_id)
+        if user.auto_rule_events.exists?(source_gmail_message_id: message_id)
           log_info("skipping message_id=#{message_id} reason=already_processed")
           next
         end
@@ -42,7 +44,7 @@ module Rules
 
         if dry_run?
           log_dry_run("message=#{message_id} would create inactive rule name=#{rule.name.inspect} priority=#{rule.priority} actions=#{format_actions(rule.actions)}")
-          log_dry_run("message=#{message_id} would send ntfy notification to channel=#{ENV.fetch('NTFY_CHANNEL', 'not_set').inspect}")
+          log_dry_run("message=#{message_id} would send ntfy notification to channel=#{user.ntfy_channel&.channel.inspect}")
           log_dry_run("message=#{message_id} would mark classify email as read")
           log_info("dry_run finished for message_id=#{message_id}")
           created += 1
@@ -62,7 +64,7 @@ module Rules
             log_info("Could not send auto-rule ntfy notification for rule #{rule.id}: #{e.class} #{e.message}")
           end
 
-          auto_rule_event = AutoRuleEvent.create!(
+          auto_rule_event = user.auto_rule_events.create!(
             source_gmail_message_id: message_id,
             created_rule: rule,
             notification_gmail_message_id: nil
@@ -85,7 +87,7 @@ module Rules
 
     private
 
-    attr_reader :gmail_client
+    attr_reader :gmail_client, :gmail_authentication, :user
 
     def dry_run?
       @dry_run
@@ -113,10 +115,10 @@ module Rules
       sender = message_data.fetch(:sender)
       subject = message_data.fetch(:subject)
 
-      Rule.new(
+      user.rules.new(
         name: "Auto: #{sender} | #{subject}".slice(0, 255),
         active: false,
-        priority: Rule.next_priority,
+        priority: user.rules.maximum(:priority).to_i + 1,
         definition: {
           match_mode: "all",
           conditions: [
@@ -159,7 +161,9 @@ module Rules
     end
 
     def send_ntfy_notification(rule:)
-      channel = ENV.fetch("NTFY_CHANNEL")
+      ntfy_channel = user.ntfy_channel
+      return unless ntfy_channel&.channel.present?
+
       edit_url = "#{base_url}/rules/#{rule.id}/edit"
       body = <<~BODY
         A new rule was created automatically.
@@ -174,7 +178,7 @@ module Rules
         Edit rule: #{edit_url}
       BODY
 
-      HTTP.post("https://ntfy.sh/#{channel}", body: body)
+      HTTP.post(ntfy_channel.notification_url, body: body)
     end
 
     def base_url

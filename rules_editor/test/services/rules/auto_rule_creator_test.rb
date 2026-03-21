@@ -37,32 +37,37 @@ class RulesAutoRulesCreatorTest < ActiveSupport::TestCase
     end
   end
 
-  test "dry run uses classify label query and logs rule creation without mutating gmail" do
-    gmail_client = FakeGmailClient.new
-    processor = Rules::AutoRulesCreator.new(gmail_client: gmail_client, dry_run: true)
+  setup do
+    @user = User.create!(email: "test@example.com")
+    @gmail_auth = GmailAuthentication.new(user: @user, email: "gmail@example.com")
+    @gmail_client = FakeGmailClient.new
+  end
 
+  test "dry run uses classify label query and logs rule creation without mutating gmail" do
     previous_classify_label = ENV.delete("AUTO_CLASSIFY_LABEL")
 
     result = nil
     output = begin
-      capture_io do
-        assert_no_difference "Rule.count" do
-          assert_no_difference "AutoRuleEvent.count" do
-            result = processor.process!
+      Gmail::Client.stub(:for_authentication, @gmail_client) do
+        capture_io do
+          assert_no_difference "Rule.count" do
+            assert_no_difference "AutoRuleEvent.count" do
+              result = Rules::AutoRulesCreator.new(gmail_authentication: @gmail_auth, dry_run: true).process!
+            end
           end
-        end
-      end.first
+        end.first
+      end
     ensure
       ENV["AUTO_CLASSIFY_LABEL"] = previous_classify_label
     end
 
     assert_equal 1, result[:inspected]
     assert_equal 1, result[:created]
-    assert_equal "label:#{Rules::AutoRulesCreator::DEFAULT_LABEL_TO_CLASSIFY}", gmail_client.last_query
-    assert_empty gmail_client.mark_read_ids
-    assert_empty gmail_client.sent_messages
+    assert_equal "label:#{Rules::AutoRulesCreator::DEFAULT_LABEL_TO_CLASSIFY}", @gmail_client.last_query
+    assert_empty @gmail_client.mark_read_ids
+    assert_empty @gmail_client.sent_messages
     assert_includes output, "would create inactive rule"
-    assert_includes output, "would send ntfy notification"
+    assert_includes output, "would send ntfy notification to channel="
     assert_includes output, "would mark classify email as read"
   end
 
@@ -75,20 +80,17 @@ class RulesAutoRulesCreatorTest < ActiveSupport::TestCase
   end
 
   test "live run creates a Rule and AutoRuleEvent for each classify message" do
-    gmail_client = FakeGmailClient.new
-    processor = Rules::AutoRulesCreator.new(gmail_client: gmail_client, dry_run: false)
-
     ENV.delete("NTFY_CHANNEL")  # ensure no ntfy HTTP call
 
     result = nil
     # Stub OneOffApplier so apply_rule never calls Gmail::Client.new
-    original_new = Rules::OneOffApplier.method(:new)
-    Rules::OneOffApplier.define_singleton_method(:new) { |rule:, **| FakeOneOffApplier.new(rule: rule) }
-    begin
-      capture_io do
-        assert_difference "Rule.count", 1 do
-          assert_difference "AutoRuleEvent.count", 1 do
-            result = processor.process!
+    Gmail::Client.stub(:for_authentication, @gmail_client) do
+      Rules::OneOffApplier.stub(:new, ->(rule:, **) { FakeOneOffApplier.new(rule: rule) }) do
+        capture_io do
+          assert_difference "Rule.count", 1 do
+            assert_difference "AutoRuleEvent.count", 1 do
+              result = Rules::AutoRulesCreator.new(gmail_authentication: @gmail_auth, dry_run: false).process!
+            end
           end
         end
       end
@@ -100,33 +102,35 @@ class RulesAutoRulesCreatorTest < ActiveSupport::TestCase
     rule = Rule.last
     assert_equal false, rule.active  # auto rules are inactive by default
     assert_match "Auto:", rule.name
+    assert_equal @user, rule.user
 
     event = AutoRuleEvent.last
     assert_equal "msg-1", event.source_gmail_message_id
     assert_equal rule, event.created_rule
+    assert_equal @user, event.user
   end
 
   test "live run skips message if AutoRuleEvent already exists for it" do
-    AutoRuleEvent.create!(
+    existing_rule = @user.rules.create!(
+      name: "Existing",
+      priority: 1,
+      definition: {
+        match_mode: "all",
+        conditions: [{ field: "sender", operator: "contains", value: "x@" }],
+        actions: [{ type: "mark_read" }]
+      }
+    )
+    @user.auto_rule_events.create!(
       source_gmail_message_id: "msg-1",
-      created_rule: Rule.create!(
-        name: "Existing",
-        priority: 1,
-        definition: {
-          match_mode: "all",
-          conditions: [{ field: "sender", operator: "contains", value: "x@" }],
-          actions: [{ type: "mark_read" }]
-        }
-      )
+      created_rule: existing_rule
     )
 
-    gmail_client = FakeGmailClient.new
-    processor = Rules::AutoRulesCreator.new(gmail_client: gmail_client, dry_run: false)
-
     result = nil
-    capture_io do
-      assert_no_difference "Rule.count" do
-        result = processor.process!
+    Gmail::Client.stub(:for_authentication, @gmail_client) do
+      capture_io do
+        assert_no_difference "Rule.count" do
+          result = Rules::AutoRulesCreator.new(gmail_authentication: @gmail_auth, dry_run: false).process!
+        end
       end
     end
 
@@ -140,8 +144,10 @@ class RulesAutoRulesCreatorTest < ActiveSupport::TestCase
     end.new
 
     result = nil
-    capture_io do
-      result = Rules::AutoRulesCreator.new(gmail_client: empty_client, dry_run: false).process!
+    Gmail::Client.stub(:for_authentication, empty_client) do
+      capture_io do
+        result = Rules::AutoRulesCreator.new(gmail_authentication: @gmail_auth, dry_run: false).process!
+      end
     end
 
     assert_equal 0, result[:inspected]
