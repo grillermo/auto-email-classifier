@@ -65,4 +65,82 @@ class RulesAutoRulesCreatorTest < ActiveSupport::TestCase
     assert_includes output, "would send confirmation email"
     assert_includes output, "would mark classify email as read"
   end
+
+  # FakeOneOffApplier prevents AutoRulesCreator#apply_rule from calling
+  # OneOffApplier.new(rule:) without a gmail_client, which would default to Gmail::Client.new
+  FakeOneOffApplierResult = Struct.new(:matched_count, :applied_count)
+  class FakeOneOffApplier
+    def initialize(rule:, gmail_client: nil); end
+    def apply!(**) = { matched_count: 1, applied_count: 1 }
+  end
+
+  test "live run creates a Rule and AutoRuleEvent for each classify message" do
+    gmail_client = FakeGmailClient.new
+    processor = Rules::AutoRulesCreator.new(gmail_client: gmail_client, dry_run: false)
+
+    ENV.delete("NTFY_CHANNEL")  # ensure no ntfy HTTP call
+
+    result = nil
+    # Stub OneOffApplier so apply_rule never calls Gmail::Client.new
+    Rules::OneOffApplier.stub(:new, ->(rule:, **) { FakeOneOffApplier.new(rule: rule) }) do
+      capture_io do
+        assert_difference "Rule.count", 1 do
+          assert_difference "AutoRuleEvent.count", 1 do
+            result = processor.process!
+          end
+        end
+      end
+    end
+
+    assert_equal 1, result[:created]
+    rule = Rule.last
+    assert_equal false, rule.active  # auto rules are inactive by default
+    assert_match "Auto:", rule.name
+
+    event = AutoRuleEvent.last
+    assert_equal "msg-1", event.source_gmail_message_id
+    assert_equal rule, event.created_rule
+  end
+
+  test "live run skips message if AutoRuleEvent already exists for it" do
+    AutoRuleEvent.create!(
+      source_gmail_message_id: "msg-1",
+      created_rule: Rule.create!(
+        name: "Existing",
+        priority: 1,
+        definition: {
+          match_mode: "all",
+          conditions: [{ field: "sender", operator: "contains", value: "x@" }],
+          actions: [{ type: "mark_read" }]
+        }
+      )
+    )
+
+    gmail_client = FakeGmailClient.new
+    processor = Rules::AutoRulesCreator.new(gmail_client: gmail_client, dry_run: false)
+
+    result = nil
+    capture_io do
+      assert_no_difference "Rule.count" do
+        result = processor.process!
+      end
+    end
+
+    assert_equal 0, result[:created]
+  end
+
+  test "returns zero counts when gmail returns no classify messages" do
+    empty_client = Class.new do
+      def list_message_ids(query:, max_results:) = []
+      def profile = Struct.new(:email_address).new("owner@example.com")
+    end.new
+
+    result = nil
+    capture_io do
+      result = Rules::AutoRulesCreator.new(gmail_client: empty_client, dry_run: false).process!
+    end
+
+    assert_equal 0, result[:inspected]
+    assert_equal 0, result[:created]
+  end
 end
