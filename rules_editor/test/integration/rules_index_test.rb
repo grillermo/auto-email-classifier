@@ -3,8 +3,13 @@
 require "test_helper"
 
 class RulesIndexTest < ActionDispatch::IntegrationTest
+  setup do
+    @user = User.create!(email: "test@example.com")
+    sign_in @user
+  end
+
   test "index returns serialized active and inactive rules" do
-    active = Rule.create!(
+    @user.rules.create!(
       name: "Active Rule",
       active: true,
       priority: 1,
@@ -15,7 +20,7 @@ class RulesIndexTest < ActionDispatch::IntegrationTest
       }
     )
 
-    Rule.create!(
+    @user.rules.create!(
       name: "Inactive Rule",
       active: false,
       priority: 2,

@@ -4,7 +4,10 @@ require "test_helper"
 
 class RulesReorderTest < ActionDispatch::IntegrationTest
   setup do
-    @rule_one = Rule.create!(
+    @user = User.create!(email: "test@example.com")
+    sign_in @user
+
+    @rule_one = @user.rules.create!(
       name: "One",
       active: true,
       priority: 1,
@@ -15,7 +18,7 @@ class RulesReorderTest < ActionDispatch::IntegrationTest
       }
     )
 
-    @rule_two = Rule.create!(
+    @rule_two = @user.rules.create!(
       name: "Two",
       active: true,
       priority: 2,
@@ -26,7 +29,7 @@ class RulesReorderTest < ActionDispatch::IntegrationTest
       }
     )
 
-    Rule.create!(
+    @user.rules.create!(
       name: "Inactive",
       active: false,
       priority: 3,

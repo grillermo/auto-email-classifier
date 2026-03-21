@@ -7,8 +7,13 @@ class RulesShowTest < ActionDispatch::IntegrationTest
     emails: [], total_count: 0, scanned_count: 0, truncated: false, error: nil
   }.freeze
 
+  setup do
+    @user = User.create!(email: "test@example.com")
+    sign_in @user
+  end
+
   test "shows matching emails with subject, from, date, and gmail link" do
-    rule = Rule.create!(
+    rule = @user.rules.create!(
       name: "Invoices",
       active: true,
       priority: 1,
@@ -21,6 +26,7 @@ class RulesShowTest < ActionDispatch::IntegrationTest
 
     RuleApplication.create!(
       rule: rule,
+      user: @user,
       gmail_message_id: "gmail-1",
       rule_version: "v1",
       applied_at: Time.current,

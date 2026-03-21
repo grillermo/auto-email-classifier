@@ -3,8 +3,12 @@
 require "test_helper"
 
 class RuleTest < ActiveSupport::TestCase
+  setup do
+    @user = User.create!(email: "test@example.com")
+  end
+
   test "is valid with required definition shape" do
-    rule = Rule.new(
+    rule = @user.rules.new(
       name: "Valid",
       priority: 1,
       definition: valid_definition
@@ -14,7 +18,7 @@ class RuleTest < ActiveSupport::TestCase
   end
 
   test "is invalid without actions" do
-    rule = Rule.new(
+    rule = @user.rules.new(
       name: "Invalid",
       priority: 1,
       definition: {
@@ -27,14 +31,14 @@ class RuleTest < ActiveSupport::TestCase
     assert_not rule.valid?
   end
 
-  test "is invalid when definition is duplicated" do
-    Rule.create!(
+  test "is invalid when definition is duplicated for same user" do
+    @user.rules.create!(
       name: "Original",
       priority: 1,
       definition: valid_definition
     )
 
-    duplicate = Rule.new(
+    duplicate = @user.rules.new(
       name: "Duplicate",
       priority: 2,
       definition: valid_definition
@@ -44,12 +48,21 @@ class RuleTest < ActiveSupport::TestCase
     assert_includes duplicate.errors[:definition], "has already been taken"
   end
 
-  test "database enforces unique definition" do
+  test "same definition is valid for different users" do
+    other_user = User.create!(email: "other@example.com")
+    @user.rules.create!(name: "Original", priority: 1, definition: valid_definition)
+
+    other_rule = other_user.rules.new(name: "Other", priority: 1, definition: valid_definition)
+    assert other_rule.valid?
+  end
+
+  test "database enforces unique definition per user" do
     now = Time.current
     definition = valid_definition
 
     Rule.insert_all!([
       {
+        user_id: @user.id,
         name: "Original",
         priority: 1,
         active: true,
@@ -63,6 +76,7 @@ class RuleTest < ActiveSupport::TestCase
     assert_raises ActiveRecord::RecordNotUnique do
       Rule.insert_all!([
         {
+          user_id: @user.id,
           name: "Duplicate",
           priority: 2,
           active: true,
@@ -76,8 +90,8 @@ class RuleTest < ActiveSupport::TestCase
   end
 
   test "next_priority returns one more than the highest existing priority" do
-    Rule.create!(name: "A", priority: 5, definition: valid_definition)
-    Rule.create!(name: "B", priority: 10, definition: valid_definition(value: "b@"))
+    @user.rules.create!(name: "A", priority: 5, definition: valid_definition)
+    @user.rules.create!(name: "B", priority: 10, definition: valid_definition(value: "b@"))
     assert_equal 11, Rule.next_priority
   end
 
@@ -86,7 +100,7 @@ class RuleTest < ActiveSupport::TestCase
   end
 
   test "version_digest changes when updated_at changes" do
-    rule = Rule.create!(name: "R", priority: 1, definition: valid_definition)
+    rule = @user.rules.create!(name: "R", priority: 1, definition: valid_definition)
     digest_before = rule.version_digest
     rule.update!(name: "R updated")
     assert_not_equal digest_before, rule.version_digest
@@ -112,15 +126,15 @@ class RuleTest < ActiveSupport::TestCase
   end
 
   test "active scope excludes inactive rules" do
-    Rule.create!(name: "Active", priority: 1, active: true, definition: valid_definition)
-    Rule.create!(name: "Inactive", priority: 2, active: false, definition: valid_definition(value: "b@"))
-    assert_equal ["Active"], Rule.active.map(&:name)
+    @user.rules.create!(name: "Active", priority: 1, active: true, definition: valid_definition)
+    @user.rules.create!(name: "Inactive", priority: 2, active: false, definition: valid_definition(value: "b@"))
+    assert_equal ["Active"], @user.rules.active.map(&:name)
   end
 
   test "ordered scope sorts by priority ascending" do
-    Rule.create!(name: "Second", priority: 2, definition: valid_definition)
-    Rule.create!(name: "First", priority: 1, definition: valid_definition(value: "b@"))
-    assert_equal ["First", "Second"], Rule.ordered.map(&:name)
+    @user.rules.create!(name: "Second", priority: 2, definition: valid_definition)
+    @user.rules.create!(name: "First", priority: 1, definition: valid_definition(value: "b@"))
+    assert_equal ["First", "Second"], @user.rules.ordered.map(&:name)
   end
 
   test "ensure_definition_hash coerces nil definition to empty hash" do
@@ -130,7 +144,7 @@ class RuleTest < ActiveSupport::TestCase
   end
 
   test "invalid match_mode fails validation" do
-    rule = Rule.new(name: "R", priority: 1, definition: valid_definition.merge("match_mode" => "invalid"))
+    rule = @user.rules.new(name: "R", priority: 1, definition: valid_definition.merge("match_mode" => "invalid"))
     assert_not rule.valid?
     assert_includes rule.errors[:definition], "match_mode must be 'all' or 'any'"
   end
@@ -138,7 +152,7 @@ class RuleTest < ActiveSupport::TestCase
   test "condition with invalid field fails validation" do
     defn = valid_definition
     defn["conditions"] = [{ field: "invalid_field", operator: "contains", value: "x" }]
-    rule = Rule.new(name: "R", priority: 1, definition: defn)
+    rule = @user.rules.new(name: "R", priority: 1, definition: defn)
     assert_not rule.valid?
     assert_includes rule.errors[:definition], "condition field is invalid"
   end
@@ -146,7 +160,7 @@ class RuleTest < ActiveSupport::TestCase
   test "condition with invalid operator fails validation" do
     defn = valid_definition
     defn["conditions"] = [{ field: "sender", operator: "equals", value: "x" }]
-    rule = Rule.new(name: "R", priority: 1, definition: defn)
+    rule = @user.rules.new(name: "R", priority: 1, definition: defn)
     assert_not rule.valid?
     assert_includes rule.errors[:definition], "condition operator is invalid"
   end
@@ -154,7 +168,7 @@ class RuleTest < ActiveSupport::TestCase
   test "condition with blank value fails validation" do
     defn = valid_definition
     defn["conditions"] = [{ field: "sender", operator: "contains", value: "   " }]
-    rule = Rule.new(name: "R", priority: 1, definition: defn)
+    rule = @user.rules.new(name: "R", priority: 1, definition: defn)
     assert_not rule.valid?
     assert_includes rule.errors[:definition], "condition value cannot be blank"
   end
@@ -162,7 +176,7 @@ class RuleTest < ActiveSupport::TestCase
   test "action with invalid type fails validation" do
     defn = valid_definition
     defn["actions"] = [{ type: "teleport" }]
-    rule = Rule.new(name: "R", priority: 1, definition: defn)
+    rule = @user.rules.new(name: "R", priority: 1, definition: defn)
     assert_not rule.valid?
     assert_includes rule.errors[:definition], "action type is invalid"
   end
@@ -170,7 +184,7 @@ class RuleTest < ActiveSupport::TestCase
   test "add_label action without label fails validation" do
     defn = valid_definition
     defn["actions"] = [{ type: "add_label", label: "" }]
-    rule = Rule.new(name: "R", priority: 1, definition: defn)
+    rule = @user.rules.new(name: "R", priority: 1, definition: defn)
     assert_not rule.valid?
     assert_includes rule.errors[:definition], "label action requires a label"
   end
@@ -178,7 +192,7 @@ class RuleTest < ActiveSupport::TestCase
   test "remove_label action without label fails validation" do
     defn = valid_definition
     defn["actions"] = [{ type: "remove_label", label: "  " }]
-    rule = Rule.new(name: "R", priority: 1, definition: defn)
+    rule = @user.rules.new(name: "R", priority: 1, definition: defn)
     assert_not rule.valid?
     assert_includes rule.errors[:definition], "label action requires a label"
   end

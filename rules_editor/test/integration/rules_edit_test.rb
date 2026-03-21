@@ -4,7 +4,10 @@ require "test_helper"
 
 class RulesEditTest < ActionDispatch::IntegrationTest
   setup do
-    @rule = Rule.create!(
+    @user = User.create!(email: "test@example.com")
+    sign_in @user
+
+    @rule = @user.rules.create!(
       name: "Important Sender",
       active: true,
       priority: 1,
