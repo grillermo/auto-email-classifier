@@ -4,8 +4,8 @@ class RulesController < ApplicationController
   before_action :set_rule, only: %i[show edit update]
 
   def index
-    active_rules = Rule.active.ordered.preload(:rule_applications)
-    inactive_rules = Rule.where(active: false).ordered.preload(:rule_applications)
+    active_rules   = current_user.rules.active.ordered.preload(:rule_applications)
+    inactive_rules = current_user.rules.where(active: false).ordered.preload(:rule_applications)
 
     render inertia: "Rules/Index", props: {
       activeRules: serialize_rules(active_rules),
@@ -46,7 +46,7 @@ class RulesController < ApplicationController
     ordered_ids = Array(params[:ordered_ids]).map(&:to_s)
 
     Rule.transaction do
-      active_rules = Rule.active.lock.order(priority: :asc, updated_at: :desc).to_a
+      active_rules = current_user.rules.active.lock.order(priority: :asc, updated_at: :desc).to_a
       active_ids = active_rules.map { |rule| rule.id.to_s }
 
       unless valid_reorder_payload?(ordered_ids, active_ids)
@@ -88,7 +88,7 @@ class RulesController < ApplicationController
   end
 
   def set_rule
-    @rule = Rule.find(params[:id])
+    @rule = current_user.rules.find(params[:id])
   end
 
   def save_and_apply?
