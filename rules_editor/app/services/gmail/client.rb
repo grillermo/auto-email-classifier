@@ -26,6 +26,12 @@ module Gmail
       CATEGORY_FORUMS
     ].freeze
 
+    def self.for_authentication(gmail_authentication)
+      manager = Gmail::OauthManager.new(gmail_authentication: gmail_authentication)
+      credentials = manager.ensure_credentials!
+      allocate.tap { |c| c.send(:initialize_with_credentials, credentials) }
+    end
+
     def initialize(user_id: "me", token_path: Gmail::Authorization.default_token_path)
       @user_id = user_id
       @authorization = Gmail::Authorization.new(token_path: token_path)
@@ -142,6 +148,14 @@ module Gmail
   private
 
     attr_reader :authorization, :service, :user_id
+
+    def initialize_with_credentials(credentials)
+      @user_id = "me"
+      @service = Google::Apis::GmailV1::GmailService.new
+      @service.client_options.application_name = APPLICATION_NAME
+      @service.authorization = credentials
+      @label_name_to_id = nil
+    end
 
     def label_name_to_id
       @label_name_to_id ||= begin

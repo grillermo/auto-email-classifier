@@ -2,82 +2,64 @@
 
 module Gmail
   class OauthManager
-    OOB_URI = Gmail::Authorization::OOB_URI
-    DEFAULT_TOKEN_PATH = Gmail::Authorization::DEFAULT_TOKEN_PATH
-    USER_ID = Gmail::Authorization::USER_ID
     SCOPE = Gmail::Authorization::SCOPE
 
     def initialize(
-      token_path: Gmail::Authorization.default_token_path,
+      gmail_authentication:,
       client_id: ENV["GOOGLE_CLIENT_ID"],
       client_secret: ENV["GOOGLE_CLIENT_SECRET"]
     )
-      @token_path = token_path
-      @authorization = Gmail::Authorization.new(
-        token_path: token_path,
-        client_id: client_id,
-        client_secret: client_secret,
-        scope: SCOPE
-      )
+      @gmail_authentication = gmail_authentication
+      @client_id = client_id
+      @client_secret = client_secret
     end
 
     def ensure_credentials!
-      credentials = authorization.fetch_credentials(user_id: USER_ID)
-      if credentials
-        begin
-          credentials.fetch_access_token!
-          return credentials
-        rescue Signet::AuthorizationError => e
-          puts "Cached credentials are no longer valid (#{e.message}). Please re-authenticate."
-          delete_cached_token!
-        end
-      end
+      credentials = build_credentials
+      credentials.fetch_access_token!
 
-      perform_authentication(authorization.authorizer)
+      gmail_authentication.update!(
+        access_token: credentials.access_token,
+        token_expires_at: credentials.expires_at,
+        last_refreshed_at: Time.current
+      )
+
+      credentials
+    rescue Signet::AuthorizationError => e
+      gmail_authentication.update!(status: :needs_reauth)
+      send_reauth_ntfy_notification
+      raise
     end
 
     private
 
-    attr_reader :authorization, :token_path
+    attr_reader :gmail_authentication, :client_id, :client_secret
 
-    def delete_cached_token!
-      File.delete(token_path) if File.exist?(token_path)
-      Gmail::Authorization.clear_cache!
-    end
-
-    def perform_authentication(authorizer)
-      puts "=== Gmail OAuth 2.0 Setup (read and modify) ===\n",
-           "Opening authorization URL in your browser...\n",
-           "If the browser doesn't open automatically, please copy and paste this URL:"
-
-      url = authorizer.get_authorization_url(base_url: OOB_URI)
-      puts url, "\n"
-
-      open_browser(url)
-
-      puts "After authorizing, enter the authorization code:"
-      code = $stdin.gets.to_s.strip
-      raise "No authorization code received" if code.empty?
-
-      credentials = authorizer.get_and_store_credentials_from_code(
-        user_id: USER_ID,
-        code: code,
-        base_url: OOB_URI
+    def build_credentials
+      Google::Auth::UserRefreshCredentials.new(
+        client_id: client_id,
+        client_secret: client_secret,
+        scope: SCOPE,
+        access_token: gmail_authentication.access_token,
+        refresh_token: gmail_authentication.refresh_token,
+        expires_at: gmail_authentication.token_expires_at
       )
-
-      authorization.cache_credentials_for(user_id: USER_ID, credentials: credentials)
-      credentials
     end
 
-    def open_browser(url)
-      case RUBY_PLATFORM
-      when /darwin/
-        system("open '#{url}'")
-      when /linux/
-        system("xdg-open '#{url}'")
-      when /mingw|mswin/
-        system("start '#{url}'")
-      end
+    def send_reauth_ntfy_notification
+      ntfy_channel = gmail_authentication.user.ntfy_channel
+      return unless ntfy_channel&.channel.present?
+
+      body = <<~BODY
+        Gmail Re-Authorization Required
+
+        The Gmail account #{gmail_authentication.email} needs to be re-authorized.
+        Please sign in and click "Re-authorize" next to the account.
+      BODY
+
+      HTTP.post(ntfy_channel.notification_url, body: body)
+    rescue StandardError => e
+      Rails.logger.error("[OauthManager] ntfy notification failed: #{e.class} #{e.message}")
     end
   end
 end
