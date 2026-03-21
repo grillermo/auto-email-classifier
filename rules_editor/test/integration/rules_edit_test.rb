@@ -48,6 +48,37 @@ class RulesEditTest < ActionDispatch::IntegrationTest
     assert_includes payload.dig("props", "errorMessages"), "Name can't be blank"
   end
 
+  test "save_and_apply applies rule to inbox and shows matched/applied in flash" do
+    # Stub OneOffApplier so no real Gmail call is made
+    fake_applier = Object.new.tap { |obj|
+      obj.define_singleton_method(:apply!) { |**_| { matched_count: 3, applied_count: 2 } }
+    }
+    Rules::OneOffApplier.stub(:new, ->(**_) { fake_applier }) do
+      patch rule_path(@rule),
+        params: valid_rule_params.merge(commit_action: "save_and_apply"),
+        headers: inertia_headers
+
+      assert_response :conflict
+      assert_equal rule_path(@rule), response.headers["X-Inertia-Location"]
+      assert_match "matched: 3", flash[:notice]
+      assert_match "applied: 2", flash[:notice]
+    end
+  end
+
+  test "save_and_apply sets alert flash when OneOffApplier raises" do
+    fake_applier = Object.new.tap { |obj|
+      obj.define_singleton_method(:apply!) { |**_| raise StandardError, "Gmail error" }
+    }
+    Rules::OneOffApplier.stub(:new, ->(**_) { fake_applier }) do
+      patch rule_path(@rule),
+        params: valid_rule_params.merge(commit_action: "save_and_apply"),
+        headers: inertia_headers
+
+      assert_response :conflict
+      assert_match "Gmail error", flash[:alert]
+    end
+  end
+
   private
 
   def inertia_headers
