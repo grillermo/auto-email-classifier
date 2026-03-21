@@ -2,6 +2,7 @@
 
 class RuleApplication < ApplicationRecord
   belongs_to :rule
+  belongs_to :user
 
   validates :gmail_message_id, :rule_version, :applied_at, presence: true
 

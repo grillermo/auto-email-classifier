@@ -3,6 +3,8 @@
 require "digest"
 
 class Rule < ApplicationRecord
+  belongs_to :user
+
   has_many :rule_applications, dependent: :delete_all
   has_many :auto_rule_events, foreign_key: :created_rule_id, dependent: :delete_all, inverse_of: :created_rule
 
@@ -13,7 +15,7 @@ class Rule < ApplicationRecord
 
   validates :name, presence: true
   validates :priority, numericality: { only_integer: true, greater_than: 0 }
-  validates :definition, uniqueness: true
+  validates :definition, uniqueness: { scope: :user_id }
   validate :validate_definition
 
   def self.next_priority
