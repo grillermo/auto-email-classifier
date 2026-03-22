@@ -16,11 +16,11 @@ module Users
     end
 
     test "posts to ntfy when ntfy_channel is configured" do
-      @user.create_ntfy_channel!(channel: "test-topic")
+      @user.create_ntfy_channel!(channel: "test-topic", server_url: "https://ntfy.sh")
       ntfy_called = false
       fake_response = Struct.new(:status).new(200)
 
-      HTTP.stub(:post, ->(_url, **_opts) { ntfy_called = true; fake_response }) do
+      stub_method(HTTP, :post, ->(_url, **_opts) { ntfy_called = true; fake_response }) do
         MagicLinkMailer.magic_link(@user, "fake-token").message
       end
 

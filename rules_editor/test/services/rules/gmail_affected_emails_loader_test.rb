@@ -3,6 +3,10 @@
 require "test_helper"
 
 class RulesGmailAffectedEmailsLoaderTest < ActiveSupport::TestCase
+  setup do
+    @user = User.create!(email: "test@example.com")
+  end
+
   class FakeGmailClient
     attr_reader :last_query, :last_max_results
 
@@ -30,7 +34,7 @@ class RulesGmailAffectedEmailsLoaderTest < ActiveSupport::TestCase
   end
 
   test "returns only emails the rule would still apply to" do
-    rule = Rule.create!(
+    rule = @user.rules.create!(
       name: "Billing",
       active: true,
       priority: 1,
@@ -43,6 +47,7 @@ class RulesGmailAffectedEmailsLoaderTest < ActiveSupport::TestCase
 
     RuleApplication.create!(
       rule: rule,
+      user: @user,
       gmail_message_id: "already-applied",
       rule_version: rule.version_digest,
       result: {},
@@ -77,7 +82,7 @@ class RulesGmailAffectedEmailsLoaderTest < ActiveSupport::TestCase
   end
 
   test "keeps partial results when some Gmail messages fail to load" do
-    rule = Rule.create!(
+    rule = @user.rules.create!(
       name: "Invoices",
       active: true,
       priority: 1,

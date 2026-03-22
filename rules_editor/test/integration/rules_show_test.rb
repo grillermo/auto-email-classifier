@@ -42,9 +42,7 @@ class RulesShowTest < ActionDispatch::IntegrationTest
 
     fake_loader = Object.new.tap { |obj| obj.define_singleton_method(:load) { EMPTY_GMAIL_PREVIEW } }
 
-    original_new = Rules::GmailAffectedEmailsLoader.method(:new)
-    Rules::GmailAffectedEmailsLoader.define_singleton_method(:new) { |**| fake_loader }
-    begin
+    stub_method(Rules::GmailAffectedEmailsLoader, :new, ->(**) { fake_loader }) do
       get rule_path(rule), headers: inertia_headers
 
       assert_response :success

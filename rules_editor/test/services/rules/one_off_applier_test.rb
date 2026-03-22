@@ -3,8 +3,12 @@
 require "test_helper"
 
 class RulesOneOffApplierTest < ActiveSupport::TestCase
+  setup do
+    @user = User.create!(email: "test@example.com")
+  end
+
   def billing_rule
-    Rule.create!(
+    @user.rules.create!(
       name: "Billing",
       priority: 1,
       active: true,
@@ -54,6 +58,7 @@ class RulesOneOffApplierTest < ActiveSupport::TestCase
     rule = billing_rule
     RuleApplication.create!(
       rule: rule,
+      user: @user,
       gmail_message_id: "msg-1",
       rule_version: rule.version_digest,
       result: {},

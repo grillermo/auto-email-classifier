@@ -3,19 +3,24 @@
 require "test_helper"
 
 class RulesRuleEngineTest < ActiveSupport::TestCase
-  test "dry run returns planned actions without applying them or recording an application" do
-    rule = Rule.create!(
-      name: "Billing",
-      priority: 1,
+  setup do
+    @user = User.create!(email: "test@example.com")
+  end
+
+  def create_rule(name: "Billing", value: "billing@", actions: [{ type: "mark_read" }])
+    @user.rules.create!(
+      name: name,
+      priority: @user.rules.count + 1,
       definition: {
         match_mode: "all",
-        conditions: [{ field: "sender", operator: "contains", value: "billing@" }],
-        actions: [
-          { type: "add_label", label: "Finance" },
-          { type: "mark_read" }
-        ]
+        conditions: [{ field: "sender", operator: "contains", value: value }],
+        actions: actions
       }
     )
+  end
+
+  test "dry run returns planned actions without applying them or recording an application" do
+    rule = create_rule(actions: [{ type: "add_label", label: "Finance" }, { type: "mark_read" }])
 
     message = {
       id: "gmail-123",
@@ -49,19 +54,12 @@ class RulesRuleEngineTest < ActiveSupport::TestCase
   end
 
   test "dry run reports already applied messages without replaying actions" do
-    rule = Rule.create!(
-      name: "Billing",
-      priority: 1,
-      definition: {
-        match_mode: "all",
-        conditions: [{ field: "sender", operator: "contains", value: "billing@" }],
-        actions: [{ type: "mark_read" }]
-      }
-    )
+    rule = create_rule
 
     RuleApplication.create!(
       gmail_message_id: "gmail-123",
       rule: rule,
+      user: @user,
       rule_version: rule.version_digest,
       result: {},
       applied_at: Time.current
@@ -81,15 +79,7 @@ class RulesRuleEngineTest < ActiveSupport::TestCase
   end
 
   test "records message metadata when applying a rule" do
-    rule = Rule.create!(
-      name: "Billing",
-      priority: 1,
-      definition: {
-        match_mode: "all",
-        conditions: [{ field: "sender", operator: "contains", value: "billing@" }],
-        actions: [{ type: "mark_read" }]
-      }
-    )
+    rule = create_rule
 
     gmail_client = Class.new do
       attr_reader :message_ids_marked_read
@@ -125,15 +115,7 @@ class RulesRuleEngineTest < ActiveSupport::TestCase
   end
 
   test "returns matched: false when no rule matches the message" do
-    rule = Rule.create!(
-      name: "Specific",
-      priority: 1,
-      definition: {
-        match_mode: "all",
-        conditions: [{ field: "sender", operator: "contains", value: "vip@" }],
-        actions: [{ type: "mark_read" }]
-      }
-    )
+    rule = create_rule(value: "vip@")
 
     result = Rules::RuleEngine.new(gmail_client: Object.new).process_message!(
       message: { id: "msg-1", from: "nobody@example.com", subject: "hi", body: "" },
@@ -144,25 +126,8 @@ class RulesRuleEngineTest < ActiveSupport::TestCase
   end
 
   test "stops at the first matching rule and does not evaluate later rules" do
-    rule_one = Rule.create!(
-      name: "First",
-      priority: 1,
-      definition: {
-        match_mode: "all",
-        conditions: [{ field: "sender", operator: "contains", value: "billing@" }],
-        actions: [{ type: "mark_read" }]
-      }
-    )
-
-    rule_two = Rule.create!(
-      name: "Second",
-      priority: 2,
-      definition: {
-        match_mode: "all",
-        conditions: [{ field: "sender", operator: "contains", value: "billing@" }],
-        actions: [{ type: "trash" }]
-      }
-    )
+    rule_one = create_rule(name: "First", value: "billing@", actions: [{ type: "mark_read" }])
+    rule_two = create_rule(name: "Second", value: "billing@", actions: [{ type: "trash" }])
 
     gmail_client = Class.new do
       attr_reader :mark_read_ids, :trash_ids
@@ -184,15 +149,7 @@ class RulesRuleEngineTest < ActiveSupport::TestCase
   end
 
   test "live run with add_label action calls Gmail client and records application" do
-    rule = Rule.create!(
-      name: "Labels",
-      priority: 1,
-      definition: {
-        match_mode: "all",
-        conditions: [{ field: "sender", operator: "contains", value: "billing@" }],
-        actions: [{ type: "add_label", label: "Finance" }]
-      }
-    )
+    rule = create_rule(name: "Labels", actions: [{ type: "add_label", label: "Finance" }])
 
     gmail_client = Class.new do
       attr_reader :ensured_labels, :modifications

@@ -2,6 +2,9 @@
 
 class SeedInitialUser < ActiveRecord::Migration[8.1]
   def up
+    # Skip seeding in test environment — tests create their own users
+    return if Rails.env.test?
+
     admin_email  = ENV.fetch("ADMIN_EMAIL")  { raise "ADMIN_EMAIL env var required for migration" }
     ntfy_channel = ENV.fetch("NTFY_CHANNEL") { raise "NTFY_CHANNEL env var required for migration" }
     ntfy_server  = ENV.fetch("NTFY_SERVER", "https://ntfy.sh")

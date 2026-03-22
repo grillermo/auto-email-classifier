@@ -59,7 +59,7 @@ class MailListenerCycleProcessorTest < ActiveSupport::TestCase
       messages: { "msg-1" => { id: "msg-1", from: "billing@example.com", subject: "inv", body: "" } }
     )
 
-    Gmail::Client.stub(:for_authentication, client) do
+    stub_method(Gmail::Client, :for_authentication, client) do
       capture_io do
         MailListener::CycleProcessor.new(gmail_authentication: @gmail_auth).process!
       end
@@ -75,7 +75,7 @@ class MailListenerCycleProcessorTest < ActiveSupport::TestCase
       messages: { "msg-1" => { id: "msg-1", from: "billing@example.com", subject: "inv", body: "" } }
     )
 
-    Gmail::Client.stub(:for_authentication, client) do
+    stub_method(Gmail::Client, :for_authentication, client) do
       assert_no_difference "RuleApplication.count" do
         capture_io do
           MailListener::CycleProcessor.new(gmail_authentication: @gmail_auth, dry_run: true).process!
@@ -90,19 +90,20 @@ class MailListenerCycleProcessorTest < ActiveSupport::TestCase
       def profile = Struct.new(:email_address).new("x@example.com")
     end.new
 
-    output = Gmail::Client.stub(:for_authentication, exploding_client) do
-      capture_io do
+    output = nil
+    stub_method(Gmail::Client, :for_authentication, exploding_client) do
+      output = capture_io do
         assert_nothing_raised do
           MailListener::CycleProcessor.new(gmail_authentication: @gmail_auth).process!
         end
-      end
-    end.first
+      end.first
+    end
 
     assert_includes output, "cycle failed"
   end
 
   test "process! sends ntfy notification on authorization error when channel is configured" do
-    @user.create_ntfy_channel!(channel: "test-channel")
+    @user.create_ntfy_channel!(channel: "test-channel", server_url: "https://ntfy.sh")
 
     auth_error_client = Class.new do
       def list_message_ids(query:, max_results:)
@@ -113,8 +114,8 @@ class MailListenerCycleProcessorTest < ActiveSupport::TestCase
 
     ntfy_called = false
 
-    Gmail::Client.stub(:for_authentication, auth_error_client) do
-      HTTP.stub(:post, ->(_url, **_opts) { ntfy_called = true }) do
+    stub_method(Gmail::Client, :for_authentication, auth_error_client) do
+      stub_method(HTTP, :post, ->(_url, **_opts) { ntfy_called = true }) do
         capture_io do
           MailListener::CycleProcessor.new(gmail_authentication: @gmail_auth).process!
         end
@@ -137,8 +138,8 @@ class MailListenerCycleProcessorTest < ActiveSupport::TestCase
 
     ntfy_called = false
 
-    Gmail::Client.stub(:for_authentication, auth_error_client) do
-      HTTP.stub(:post, ->(_url, **_opts) { ntfy_called = true }) do
+    stub_method(Gmail::Client, :for_authentication, auth_error_client) do
+      stub_method(HTTP, :post, ->(_url, **_opts) { ntfy_called = true }) do
         capture_io do
           MailListener::CycleProcessor.new(gmail_authentication: @gmail_auth).process!
         end

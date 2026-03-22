@@ -4,6 +4,10 @@ require "test_helper"
 
 module Gmail
   class OauthManagerTest < ActiveSupport::TestCase
+    FakeCredentials = Struct.new(:access_token, :expires_at) do
+      def fetch_access_token!; end
+    end
+
     setup do
       @user = User.create!(email: "test@example.com")
       @auth = GmailAuthentication.create!(
@@ -16,15 +20,12 @@ module Gmail
     end
 
     test "ensure_credentials! returns credentials when token is valid" do
-      mock_credentials = Minitest::Mock.new
-      mock_credentials.expect(:fetch_access_token!, nil)
-      mock_credentials.expect(:access_token, "new-access")
-      mock_credentials.expect(:expires_at, 2.hours.from_now)
+      fake_creds = FakeCredentials.new("new-access", 2.hours.from_now)
 
-      OauthManager.stub_any_instance(:build_credentials, mock_credentials) do
+      OauthManager.stub_any_instance(:build_credentials, fake_creds) do
         manager = OauthManager.new(gmail_authentication: @auth)
         result = manager.ensure_credentials!
-        assert_equal mock_credentials, result
+        assert_equal fake_creds, result
       end
 
       @auth.reload
@@ -32,10 +33,11 @@ module Gmail
     end
 
     test "ensure_credentials! marks needs_reauth on AuthorizationError" do
-      mock_credentials = Minitest::Mock.new
-      mock_credentials.expect(:fetch_access_token!, nil) { raise Signet::AuthorizationError.new("revoked") }
+      error_creds = Object.new.tap do |obj|
+        obj.define_singleton_method(:fetch_access_token!) { raise Signet::AuthorizationError.new("revoked") }
+      end
 
-      OauthManager.stub_any_instance(:build_credentials, mock_credentials) do
+      OauthManager.stub_any_instance(:build_credentials, error_creds) do
         manager = OauthManager.new(gmail_authentication: @auth)
         assert_raises(Signet::AuthorizationError) { manager.ensure_credentials! }
       end
@@ -44,13 +46,14 @@ module Gmail
     end
 
     test "ensure_credentials! sends ntfy notification on auth error when channel configured" do
-      @user.create_ntfy_channel!(channel: "test-topic")
-      mock_credentials = Minitest::Mock.new
-      mock_credentials.expect(:fetch_access_token!, nil) { raise Signet::AuthorizationError.new("revoked") }
+      @user.create_ntfy_channel!(channel: "test-topic", server_url: "https://ntfy.sh")
+      error_creds = Object.new.tap do |obj|
+        obj.define_singleton_method(:fetch_access_token!) { raise Signet::AuthorizationError.new("revoked") }
+      end
 
       ntfy_called = false
-      HTTP.stub(:post, ->(_url, **_opts) { ntfy_called = true; Struct.new(:status).new(200) }) do
-        OauthManager.stub_any_instance(:build_credentials, mock_credentials) do
+      stub_method(HTTP, :post, ->(_url, **_opts) { ntfy_called = true; Struct.new(:status).new(200) }) do
+        OauthManager.stub_any_instance(:build_credentials, error_creds) do
           manager = OauthManager.new(gmail_authentication: @auth)
           assert_raises(Signet::AuthorizationError) { manager.ensure_credentials! }
         end

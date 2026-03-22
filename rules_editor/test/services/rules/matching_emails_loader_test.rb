@@ -3,8 +3,12 @@
 require "test_helper"
 
 class RulesMatchingEmailsLoaderTest < ActiveSupport::TestCase
+  setup do
+    @user = User.create!(email: "test@example.com")
+  end
+
   def create_rule
-    Rule.create!(
+    @user.rules.create!(
       name: "Billing",
       priority: 1,
       definition: {
@@ -18,6 +22,7 @@ class RulesMatchingEmailsLoaderTest < ActiveSupport::TestCase
   def create_application(rule:, message_id:, subject: "Invoice", from: "billing@example.com", date: "Mon, 10 Mar 2026 09:00:00 +0000", thread_id: nil)
     RuleApplication.create!(
       rule: rule,
+      user: @user,
       gmail_message_id: message_id,
       rule_version: rule.version_digest,
       applied_at: Time.current,
@@ -71,6 +76,7 @@ class RulesMatchingEmailsLoaderTest < ActiveSupport::TestCase
     # Apply same message again with different rule version
     RuleApplication.create!(
       rule: rule,
+      user: @user,
       gmail_message_id: "msg-dup",
       rule_version: "different-version",
       applied_at: 1.hour.ago,
@@ -87,6 +93,7 @@ class RulesMatchingEmailsLoaderTest < ActiveSupport::TestCase
     rule = create_rule
     RuleApplication.create!(
       rule: rule,
+      user: @user,
       gmail_message_id: "msg-no-meta",
       rule_version: rule.version_digest,
       applied_at: Time.current,
@@ -109,6 +116,7 @@ class RulesMatchingEmailsLoaderTest < ActiveSupport::TestCase
     rule = create_rule
     RuleApplication.create!(
       rule: rule,
+      user: @user,
       gmail_message_id: "msg-broken",
       rule_version: rule.version_digest,
       applied_at: Time.current,

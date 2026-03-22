@@ -17,11 +17,12 @@ module MailListener
 
     test "calls CycleProcessor for each active gmail_authentication" do
       processed = []
-
-      CycleProcessor.stub(:new, ->(gmail_authentication:, **) {
+      fake_processor = ->(gmail_authentication:, **) {
         processed << gmail_authentication.email
-        Minitest::Mock.new.tap { |m| m.expect(:process!, nil) }
-      }) do
+        Object.new.tap { |obj| obj.define_singleton_method(:process!) {} }
+      }
+
+      stub_method(CycleProcessor, :new, fake_processor) do
         ProcessCycleJob.new.perform
       end
 
@@ -31,8 +32,12 @@ module MailListener
     test "skips needs_reauth accounts" do
       @auth.update!(status: :needs_reauth)
       processed = []
+      fake_processor = ->(**) {
+        processed << true
+        Object.new.tap { |obj| obj.define_singleton_method(:process!) {} }
+      }
 
-      CycleProcessor.stub(:new, ->(**) { processed << true; Minitest::Mock.new.tap { |m| m.expect(:process!, nil) } }) do
+      stub_method(CycleProcessor, :new, fake_processor) do
         ProcessCycleJob.new.perform
       end
 
@@ -47,17 +52,17 @@ module MailListener
       processed = []
       call_count = 0
 
-      CycleProcessor.stub(:new, ->(gmail_authentication:, **) {
+      fake_processor = ->(gmail_authentication:, **) {
         call_count += 1
-        mock = Minitest::Mock.new
         if call_count == 1
-          mock.expect(:process!, nil) { raise StandardError, "boom" }
+          Object.new.tap { |obj| obj.define_singleton_method(:process!) { raise StandardError, "boom" } }
         else
-          mock.expect(:process!, nil)
           processed << gmail_authentication.email
+          Object.new.tap { |obj| obj.define_singleton_method(:process!) {} }
         end
-        mock
-      }) do
+      }
+
+      stub_method(CycleProcessor, :new, fake_processor) do
         ProcessCycleJob.new.perform
       end
 

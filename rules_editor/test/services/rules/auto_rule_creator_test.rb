@@ -47,9 +47,10 @@ class RulesAutoRulesCreatorTest < ActiveSupport::TestCase
     previous_classify_label = ENV.delete("AUTO_CLASSIFY_LABEL")
 
     result = nil
-    output = begin
-      Gmail::Client.stub(:for_authentication, @gmail_client) do
-        capture_io do
+    output = nil
+    begin
+      stub_method(Gmail::Client, :for_authentication, @gmail_client) do
+        output = capture_io do
           assert_no_difference "Rule.count" do
             assert_no_difference "AutoRuleEvent.count" do
               result = Rules::AutoRulesCreator.new(gmail_authentication: @gmail_auth, dry_run: true).process!
@@ -84,8 +85,8 @@ class RulesAutoRulesCreatorTest < ActiveSupport::TestCase
 
     result = nil
     # Stub OneOffApplier so apply_rule never calls Gmail::Client.new
-    Gmail::Client.stub(:for_authentication, @gmail_client) do
-      Rules::OneOffApplier.stub(:new, ->(rule:, **) { FakeOneOffApplier.new(rule: rule) }) do
+    stub_method(Gmail::Client, :for_authentication, @gmail_client) do
+      stub_method(Rules::OneOffApplier, :new, ->(rule:, **) { FakeOneOffApplier.new(rule: rule) }) do
         capture_io do
           assert_difference "Rule.count", 1 do
             assert_difference "AutoRuleEvent.count", 1 do
@@ -126,7 +127,7 @@ class RulesAutoRulesCreatorTest < ActiveSupport::TestCase
     )
 
     result = nil
-    Gmail::Client.stub(:for_authentication, @gmail_client) do
+    stub_method(Gmail::Client, :for_authentication, @gmail_client) do
       capture_io do
         assert_no_difference "Rule.count" do
           result = Rules::AutoRulesCreator.new(gmail_authentication: @gmail_auth, dry_run: false).process!
@@ -144,7 +145,7 @@ class RulesAutoRulesCreatorTest < ActiveSupport::TestCase
     end.new
 
     result = nil
-    Gmail::Client.stub(:for_authentication, empty_client) do
+    stub_method(Gmail::Client, :for_authentication, empty_client) do
       capture_io do
         result = Rules::AutoRulesCreator.new(gmail_authentication: @gmail_auth, dry_run: false).process!
       end

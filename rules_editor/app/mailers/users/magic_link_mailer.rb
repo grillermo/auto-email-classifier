@@ -4,7 +4,7 @@ module Users
   class MagicLinkMailer < Devise::Mailer
     # Called by devise-passwordless to deliver the magic link.
     # Instead of sending email, we POST the link to the user's ntfy channel.
-    def magic_link(record, token, opts = {})
+    def magic_link(record, token, remember_me = false, opts = {})
       @token = token
       @resource = record
 
@@ -30,7 +30,7 @@ module Users
     # We use the route helper with host from ActionMailer default_url_options.
     def generate_magic_link_url(record, token)
       resource_name = record.class.model_name.singular_route_key
-      opts = Rails.application.config.action_mailer.default_url_options.merge(token: token)
+      opts = (Rails.application.config.action_mailer.default_url_options || {}).merge(token: token)
       Rails.application.routes.url_helpers.public_send(
         "#{resource_name}_magic_link_url",
         opts

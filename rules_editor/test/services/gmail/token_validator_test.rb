@@ -16,22 +16,20 @@ module Gmail
     end
 
     test "refreshes active tokens and returns needs_reauth list" do
-      mock_creds = Minitest::Mock.new
-      mock_creds.expect(:fetch_access_token!, nil)
-      mock_creds.expect(:access_token, "new-tok")
-      mock_creds.expect(:expires_at, 2.hours.from_now)
+      fake_creds = Struct.new(:access_token, :expires_at) { def fetch_access_token!; end }.new("new-tok", 2.hours.from_now)
 
-      OauthManager.stub_any_instance(:build_credentials, mock_creds) do
+      OauthManager.stub_any_instance(:build_credentials, fake_creds) do
         result = TokenValidator.call(user: @user)
         assert_empty result[:needs_reauth]
       end
     end
 
     test "returns needs_reauth when token refresh fails" do
-      mock_creds = Minitest::Mock.new
-      mock_creds.expect(:fetch_access_token!, nil) { raise Signet::AuthorizationError.new("revoked") }
+      error_creds = Object.new.tap do |obj|
+        obj.define_singleton_method(:fetch_access_token!) { raise Signet::AuthorizationError.new("revoked") }
+      end
 
-      OauthManager.stub_any_instance(:build_credentials, mock_creds) do
+      OauthManager.stub_any_instance(:build_credentials, error_creds) do
         result = TokenValidator.call(user: @user)
         assert_includes result[:needs_reauth], @auth.email
       end

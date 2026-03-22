@@ -16,8 +16,11 @@ class MakeUserIdNotNull < ActiveRecord::Migration[8.1]
     change_column_null :rule_applications, :user_id, false
     change_column_null :auto_rule_events,  :user_id, false
 
-    add_index :rules, [ :user_id, :definition ], unique: true, using: :gin,
-              name: "index_rules_on_user_id_and_definition"
+    # Use expression index on definition::text — GIN doesn't support UNIQUE
+    execute <<~SQL
+      CREATE UNIQUE INDEX index_rules_on_user_id_and_definition
+      ON rules (user_id, (definition::text))
+    SQL
   end
 
   def down

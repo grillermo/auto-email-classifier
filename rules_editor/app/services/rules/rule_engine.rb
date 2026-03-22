@@ -47,6 +47,7 @@ module Rules
       RuleApplication.create!(
         gmail_message_id: message[:id],
         rule_id: rule.id,
+        user_id: rule.user_id,
         rule_version: rule_version,
         result: {
           matched_by: rule.definition["conditions"],
