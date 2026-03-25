@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Users
-  class MagicLinkMailer < Devise::Mailer
+  class DeviseNotifier < Devise::Mailer
     # Called by devise-passwordless to deliver the magic link.
     # Instead of sending email, we POST the link to the user's ntfy channel.
     def magic_link(record, token, remember_me = false, opts = {})
@@ -51,7 +51,7 @@ module Users
         headers: { "Title" => "Sign in link", "Priority" => "high" }
       )
     rescue StandardError => e
-      Rails.logger.error("[MagicLinkMailer] ntfy delivery failed: #{e.class} #{e.message}")
+      Rails.logger.error("[DeviseNotifier] ntfy delivery failed: #{e.class} #{e.message}")
       raise
     end
   end

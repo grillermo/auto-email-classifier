@@ -3,7 +3,7 @@
 require "test_helper"
 
 module Users
-  class MagicLinkMailerTest < ActionMailer::TestCase
+  class DeviseNotifierTest < ActionMailer::TestCase
     setup do
       @user = User.create!(email: "test@example.com")
     end
@@ -11,7 +11,7 @@ module Users
     test "raises NotConfiguredError when user has no ntfy_channel" do
       # ActionMailer methods must be called as class methods; .message returns the Mail::Message
       assert_raises(NtfyChannel::NotConfiguredError) do
-        MagicLinkMailer.magic_link(@user, "fake-token").message
+        DeviseNotifier.magic_link(@user, "fake-token").message
       end
     end
 
@@ -21,7 +21,7 @@ module Users
       fake_response = Struct.new(:status).new(200)
 
       stub_method(HTTP, :post, ->(_url, **_opts) { ntfy_called = true; fake_response }) do
-        MagicLinkMailer.magic_link(@user, "fake-token").message
+        DeviseNotifier.magic_link(@user, "fake-token").message
       end
 
       assert ntfy_called
