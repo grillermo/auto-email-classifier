@@ -53,7 +53,9 @@ class RulesEditTest < ActionDispatch::IntegrationTest
     fake_applier = Object.new.tap { |obj|
       obj.define_singleton_method(:apply!) { |**_| { matched_count: 3, applied_count: 2 } }
     }
-    Rules::OneOffApplier.stub(:new, ->(**_) { fake_applier }) do
+    original_new = Rules::OneOffApplier.method(:new)
+    Rules::OneOffApplier.define_singleton_method(:new) { |**_| fake_applier }
+    begin
       patch rule_path(@rule),
         params: valid_rule_params.merge(commit_action: "save_and_apply"),
         headers: inertia_headers
@@ -62,6 +64,8 @@ class RulesEditTest < ActionDispatch::IntegrationTest
       assert_equal rule_path(@rule), response.headers["X-Inertia-Location"]
       assert_match "matched: 3", flash[:notice]
       assert_match "applied: 2", flash[:notice]
+    ensure
+      Rules::OneOffApplier.define_singleton_method(:new, &original_new)
     end
   end
 
@@ -69,13 +73,17 @@ class RulesEditTest < ActionDispatch::IntegrationTest
     fake_applier = Object.new.tap { |obj|
       obj.define_singleton_method(:apply!) { |**_| raise StandardError, "Gmail error" }
     }
-    Rules::OneOffApplier.stub(:new, ->(**_) { fake_applier }) do
+    original_new = Rules::OneOffApplier.method(:new)
+    Rules::OneOffApplier.define_singleton_method(:new) { |**_| fake_applier }
+    begin
       patch rule_path(@rule),
         params: valid_rule_params.merge(commit_action: "save_and_apply"),
         headers: inertia_headers
 
       assert_response :conflict
       assert_match "Gmail error", flash[:alert]
+    ensure
+      Rules::OneOffApplier.define_singleton_method(:new, &original_new)
     end
   end
 

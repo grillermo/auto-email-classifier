@@ -27,10 +27,9 @@ class GmailAuthorizationTest < ActiveSupport::TestCase
     authorization = build_authorization
     authorizer = FakeAuthorizer.new("token-1")
 
-    authorization.stub(:build_authorizer, authorizer) do
-      assert_equal "token-1", authorization.fetch_credentials(user_id: Gmail::Authorization::USER_ID)
-      assert_equal "token-1", authorization.fetch_credentials(user_id: Gmail::Authorization::USER_ID)
-    end
+    authorization.define_singleton_method(:build_authorizer) { authorizer }
+    assert_equal "token-1", authorization.fetch_credentials(user_id: Gmail::Authorization::USER_ID)
+    assert_equal "token-1", authorization.fetch_credentials(user_id: Gmail::Authorization::USER_ID)
 
     assert_equal 1, authorizer.get_credentials_calls
   end
@@ -41,13 +40,11 @@ class GmailAuthorizationTest < ActiveSupport::TestCase
     first_authorizer = FakeAuthorizer.new("token-1")
     second_authorizer = FakeAuthorizer.new("token-2")
 
-    first.stub(:build_authorizer, first_authorizer) do
-      assert_equal "token-1", first.fetch_credentials(user_id: Gmail::Authorization::USER_ID)
-    end
+    first.define_singleton_method(:build_authorizer) { first_authorizer }
+    assert_equal "token-1", first.fetch_credentials(user_id: Gmail::Authorization::USER_ID)
 
-    second.stub(:build_authorizer, second_authorizer) do
-      assert_equal "token-1", second.fetch_credentials(user_id: Gmail::Authorization::USER_ID)
-    end
+    second.define_singleton_method(:build_authorizer) { second_authorizer }
+    assert_equal "token-1", second.fetch_credentials(user_id: Gmail::Authorization::USER_ID)
 
     assert_equal 1, first_authorizer.get_credentials_calls
     assert_equal 0, second_authorizer.get_credentials_calls

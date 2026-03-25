@@ -36,7 +36,9 @@ class RulesShowTest < ActionDispatch::IntegrationTest
 
     fake_loader = Object.new.tap { |obj| obj.define_singleton_method(:load) { EMPTY_GMAIL_PREVIEW } }
 
-    Rules::GmailAffectedEmailsLoader.stub(:new, ->(**) { fake_loader }) do
+    original_new = Rules::GmailAffectedEmailsLoader.method(:new)
+    Rules::GmailAffectedEmailsLoader.define_singleton_method(:new) { |**| fake_loader }
+    begin
       get rule_path(rule), headers: inertia_headers
 
       assert_response :success
@@ -49,6 +51,8 @@ class RulesShowTest < ActionDispatch::IntegrationTest
       assert_equal "Invoice March", matching_email.fetch("subject")
       assert_equal "billing@example.com", matching_email.fetch("from")
       assert_equal "https://mail.google.com/mail/u/0/#all/thread-1", matching_email.fetch("gmailUrl")
+    ensure
+      Rules::GmailAffectedEmailsLoader.define_singleton_method(:new, &original_new)
     end
   end
 

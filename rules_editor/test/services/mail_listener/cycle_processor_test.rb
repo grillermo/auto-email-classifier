@@ -104,15 +104,18 @@ class MailListenerCycleProcessorTest < ActiveSupport::TestCase
     ntfy_called = false
     ENV["NTFY_CHANNEL"] = "test-channel"
 
-    HTTP.stub(:post, ->(_url, **_opts) { ntfy_called = true }) do
+    original_post = HTTP.method(:post)
+    HTTP.define_singleton_method(:post) { |_url, **_opts| ntfy_called = true }
+    begin
       capture_io do
         MailListener::CycleProcessor.new(gmail_client: auth_error_client).process!
       end
+    ensure
+      HTTP.define_singleton_method(:post, &original_post)
+      ENV.delete("NTFY_CHANNEL")
     end
 
     assert ntfy_called, "Expected HTTP.post to be called for ntfy notification"
-  ensure
-    ENV.delete("NTFY_CHANNEL")
   end
 
   test "skips ntfy notification when NTFY_CHANNEL is not set" do
@@ -126,10 +129,14 @@ class MailListenerCycleProcessorTest < ActiveSupport::TestCase
     ENV.delete("NTFY_CHANNEL")
     ntfy_called = false
 
-    HTTP.stub(:post, ->(_url, **_opts) { ntfy_called = true }) do
+    original_post = HTTP.method(:post)
+    HTTP.define_singleton_method(:post) { |_url, **_opts| ntfy_called = true }
+    begin
       capture_io do
         MailListener::CycleProcessor.new(gmail_client: auth_error_client).process!
       end
+    ensure
+      HTTP.define_singleton_method(:post, &original_post)
     end
 
     assert_not ntfy_called

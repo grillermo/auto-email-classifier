@@ -62,7 +62,7 @@ class RulesAutoRulesCreatorTest < ActiveSupport::TestCase
     assert_empty gmail_client.mark_read_ids
     assert_empty gmail_client.sent_messages
     assert_includes output, "would create inactive rule"
-    assert_includes output, "would send confirmation email"
+    assert_includes output, "would send ntfy notification"
     assert_includes output, "would mark classify email as read"
   end
 
@@ -82,7 +82,9 @@ class RulesAutoRulesCreatorTest < ActiveSupport::TestCase
 
     result = nil
     # Stub OneOffApplier so apply_rule never calls Gmail::Client.new
-    Rules::OneOffApplier.stub(:new, ->(rule:, **) { FakeOneOffApplier.new(rule: rule) }) do
+    original_new = Rules::OneOffApplier.method(:new)
+    Rules::OneOffApplier.define_singleton_method(:new) { |rule:, **| FakeOneOffApplier.new(rule: rule) }
+    begin
       capture_io do
         assert_difference "Rule.count", 1 do
           assert_difference "AutoRuleEvent.count", 1 do
@@ -90,6 +92,8 @@ class RulesAutoRulesCreatorTest < ActiveSupport::TestCase
           end
         end
       end
+    ensure
+      Rules::OneOffApplier.define_singleton_method(:new, &original_new)
     end
 
     assert_equal 1, result[:created]
