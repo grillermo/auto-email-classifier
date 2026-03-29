@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Users
-  class SessionsController < Devise::SessionsController
+  class SessionsController < Devise::Passwordless::SessionsController
     protected
 
     def after_sign_in_path_for(resource)
