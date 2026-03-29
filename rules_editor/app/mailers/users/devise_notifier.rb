@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "json"
+
 module Users
   class DeviseNotifier < Devise::Mailer
     # Called by devise-passwordless to deliver the magic link.
@@ -38,17 +40,22 @@ module Users
     end
 
     def deliver_via_ntfy(ntfy_channel, magic_link_url)
-      body = <<~BODY
+      text = <<~BODY
         Sign in to Auto Email Classifier
 
         Tap or click this link to sign in (valid 15 minutes):
         #{magic_link_url}
       BODY
 
-      HTTP.post(
+      body = {
+        text: text,
+        title: 'Sign in link',
+        input: magic_link_url
+      }
+
+      HTTP.headers("Content-Type" => "application/json").post(
         ntfy_channel.notification_url,
-        body: body,
-        headers: { "Title" => "Sign in link", "Priority" => "high" }
+        body: JSON.generate(body)
       )
     rescue StandardError => e
       Rails.logger.error("[DeviseNotifier] ntfy delivery failed: #{e.class} #{e.message}")

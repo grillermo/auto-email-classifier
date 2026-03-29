@@ -1,0 +1,22 @@
+<div class="max-w-md mx-auto mt-12">
+  <div class="bg-surface-container-lowest border border-outline-variant p-8 rounded-2xl shadow-sm">
+    <h2 class="text-2xl font-bold text-on-surface mb-2 font-headline">Sign in</h2>
+    <p class="text-on-surface-variant mb-8 text-sm">Enter your email to receive a magic link to sign in.</p>
+
+    <%= form_for(resource, as: resource_name, url: session_path(resource_name), data: { turbo: false }) do |f| %>
+      <div class="mb-6">
+        <%= f.label :email, class: "block text-sm font-medium text-on-surface mb-2" %>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "w-full border-outline-variant rounded-xl focus:ring-primary focus:border-primary px-4 py-3 bg-surface-container-lowest text-on-surface placeholder:text-outline", placeholder: "you@example.com", required: true %>
+      </div>
+
+      <% if devise_mapping.rememberable? %>
+        <div class="mb-6 flex items-center">
+          <%= f.check_box :remember_me, class: "rounded border-outline-variant text-primary focus:ring-primary h-5 w-5 mr-3" %>
+          <%= f.label :remember_me, class: "text-sm text-on-surface-variant" %>
+        </div>
+      <% end %>
+
+      <%= f.submit "Send magic link", class: "w-full bg-primary hover:bg-primary-dim text-on-primary font-semibold py-3 px-4 rounded-full transition-colors duration-200 cursor-pointer" %>
+    <% end %>
+  </div>
+</div>
