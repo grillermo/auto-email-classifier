@@ -2,6 +2,7 @@
 
 require "test_helper"
 require "json"
+require "uri"
 
 module Users
   class DeviseNotifierTest < ActionMailer::TestCase
@@ -32,8 +33,19 @@ module Users
         test_case.assert_equal expected_url, url
 
         payload = JSON.parse(opts.fetch(:body))
+        magic_link_uri = URI.parse(payload["input"])
+        magic_link_params = Rack::Utils.parse_nested_query(magic_link_uri.query)
+
         test_case.assert_equal "Sign in link", payload["title"]
-        test_case.assert_equal "http://localhost/users/magic_link?token=fake-token", payload["input"]
+        test_case.assert_equal "http://localhost/users/magic_link", "#{magic_link_uri.scheme}://#{magic_link_uri.host}#{magic_link_uri.path}"
+        test_case.assert_equal(
+          {
+            "email" => "test@example.com",
+            "token" => "fake-token",
+            "remember_me" => "false"
+          },
+          magic_link_params.fetch("user")
+        )
         test_case.assert_includes payload["text"], "Sign in to Auto Email Classifier"
         test_case.assert_includes payload["text"], payload["input"]
 

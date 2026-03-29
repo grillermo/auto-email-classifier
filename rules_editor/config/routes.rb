@@ -1,6 +1,6 @@
 Rails.application.routes.draw do
   # devise-passwordless automatically mounts the magic link confirmation route
-  # (GET /users/magic_link?token=...) via :magic_link_authenticatable.
+  # (GET /users/magic_link?user[token]=...) via :magic_link_authenticatable.
   # This generates the `user_magic_link_url` route helper used by the mailer.
   devise_for :users,
     controllers: { sessions: "users/sessions" },

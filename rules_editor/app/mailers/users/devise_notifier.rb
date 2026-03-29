@@ -16,7 +16,7 @@ module Users
               "User #{record.email} has no ntfy_channel configured"
       end
 
-      magic_link_url = generate_magic_link_url(record, token)
+      magic_link_url = generate_magic_link_url(record, token, remember_me)
       deliver_via_ntfy(ntfy_channel, magic_link_url)
 
       # Return a mail object with deliveries disabled — Devise expects a mail object back
@@ -27,12 +27,17 @@ module Users
 
     private
 
-    # devise-passwordless 0.2 generates the URL via the route helper.
-    # The route is named `user_magic_link` (or `{resource_name}_magic_link`).
-    # We use the route helper with host from ActionMailer default_url_options.
-    def generate_magic_link_url(record, token)
+    # devise-passwordless expects scoped params such as `user[token]` and
+    # `user[email]`, not a top-level `token` query param.
+    def generate_magic_link_url(record, token, remember_me)
       resource_name = record.class.model_name.singular_route_key
-      opts = (Rails.application.config.action_mailer.default_url_options || {}).merge(token: token)
+      opts = (Rails.application.config.action_mailer.default_url_options || {}).merge(
+        resource_name.to_sym => {
+          email: record.email,
+          token: token,
+          remember_me: remember_me
+        }
+      )
       Rails.application.routes.url_helpers.public_send(
         "#{resource_name}_magic_link_url",
         opts
