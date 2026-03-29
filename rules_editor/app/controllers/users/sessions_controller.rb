@@ -2,11 +2,6 @@
 
 module Users
   class SessionsController < Devise::Passwordless::SessionsController
-    protected
-
-    def after_sign_in_path_for(resource)
-      Gmail::TokenValidator.call(user: resource)
-      super
-    end
+    include PostSignInRedirect
   end
 end

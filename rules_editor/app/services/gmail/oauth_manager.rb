@@ -31,6 +31,18 @@ module Gmail
       raise
     end
 
+    def activate!(credentials:, email:)
+      gmail_authentication.update!(
+        email: email,
+        access_token: credentials.access_token,
+        refresh_token: credentials.refresh_token.presence || gmail_authentication.refresh_token,
+        token_expires_at: credentials.expires_at,
+        last_refreshed_at: Time.current,
+        status: :active,
+        scopes: SCOPE
+      )
+    end
+
     private
 
     attr_reader :gmail_authentication, :client_id, :client_secret

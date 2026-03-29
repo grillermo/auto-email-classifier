@@ -12,6 +12,8 @@ Rails.application.routes.draw do
       as: "user_magic_link"
   end
 
+  resources :gmail_authentications, only: [:new]
+
   # Gmail OAuth
   scope "/gmail/oauth" do
     get  "authorize", to: "gmail/oauth_callback#new",    as: :gmail_oauth_authorize

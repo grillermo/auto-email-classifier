@@ -29,4 +29,44 @@ class SignInTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".bg-secondary-container", /A magic link has been sent/
   end
+
+  test "valid magic link signs the user in" do
+    token = Devise::Passwordless::LoginToken.encode(@user)
+
+    get user_magic_link_path(
+      user: {
+        email: @user.email,
+        token: token,
+        remember_me: false
+      }
+    )
+
+    assert_redirected_to new_gmail_authentication_path
+
+    follow_redirect!
+
+    assert_response :success
+    assert_equal new_gmail_authentication_path, path
+    assert_select "h1", "Connect a Gmail account"
+  end
+
+  test "valid magic link lands on rules when the user already has a gmail authentication" do
+    @user.gmail_authentications.create!(
+      email: "gmail@example.com",
+      access_token: "access-token",
+      refresh_token: "refresh-token"
+    )
+
+    token = Devise::Passwordless::LoginToken.encode(@user)
+
+    get user_magic_link_path(
+      user: {
+        email: @user.email,
+        token: token,
+        remember_me: false
+      }
+    )
+
+    assert_redirected_to root_path
+  end
 end

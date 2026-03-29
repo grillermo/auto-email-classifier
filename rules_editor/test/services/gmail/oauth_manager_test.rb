@@ -61,5 +61,43 @@ module Gmail
 
       assert ntfy_called
     end
+
+    test "activate! updates tokens and marks the authentication active" do
+      credentials = Struct.new(:access_token, :refresh_token, :expires_at).new(
+        "new-access",
+        "new-refresh",
+        2.hours.from_now
+      )
+
+      OauthManager.new(gmail_authentication: @auth).activate!(
+        credentials: credentials,
+        email: "gmail@example.com"
+      )
+
+      @auth.reload
+      assert_equal "new-access", @auth.access_token
+      assert_equal "new-refresh", @auth.refresh_token
+      assert @auth.status_active?
+      assert_equal Gmail::Authorization::SCOPE, @auth.scopes
+    end
+
+    test "activate! preserves an existing refresh token when credentials omit one" do
+      @auth.update!(status: :needs_reauth)
+      credentials = Struct.new(:access_token, :refresh_token, :expires_at).new(
+        "fresh-access",
+        nil,
+        2.hours.from_now
+      )
+
+      OauthManager.new(gmail_authentication: @auth).activate!(
+        credentials: credentials,
+        email: "gmail@example.com"
+      )
+
+      @auth.reload
+      assert_equal "fresh-access", @auth.access_token
+      assert_equal "valid-refresh", @auth.refresh_token
+      assert @auth.status_active?
+    end
   end
 end

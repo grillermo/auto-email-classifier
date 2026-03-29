@@ -7,7 +7,10 @@ module Gmail
 
     def new
       authorizer = build_authorizer
-      url = authorizer.get_authorization_url(base_url: gmail_oauth_callback_url)
+      url = authorizer.get_authorization_url(
+        base_url: gmail_oauth_callback_url,
+        login_hint: current_user.email
+      )
       redirect_to url, allow_other_host: true
     end
 
@@ -24,16 +27,14 @@ module Gmail
       gmail_email = fetch_gmail_email(credentials)
 
       auth = current_user.gmail_authentications.find_or_initialize_by(email: gmail_email)
-      auth.update!(
-        access_token: credentials.access_token,
-        refresh_token: credentials.refresh_token,
-        token_expires_at: credentials.expires_at,
-        last_refreshed_at: Time.current,
-        status: :active,
-        scopes: SCOPE
+      existing_auth = auth.persisted?
+
+      Gmail::OauthManager.new(gmail_authentication: auth).activate!(
+        credentials: credentials,
+        email: gmail_email
       )
 
-      redirect_to root_path, notice: "Gmail account #{gmail_email} connected."
+      redirect_to root_path, notice: success_notice_for(gmail_email, existing_auth:)
     rescue ActionController::ParameterMissing, Google::Auth::AuthorizationError => e
       redirect_to root_path, alert: "Gmail authorization failed: #{e.message}"
     end
@@ -57,6 +58,12 @@ module Gmail
       service = Google::Apis::GmailV1::GmailService.new
       service.authorization = credentials
       service.get_user_profile("me").email_address
+    end
+
+    def success_notice_for(gmail_email, existing_auth:)
+      return "Gmail account #{gmail_email} re-authorized." if existing_auth
+
+      "Gmail account #{gmail_email} connected."
     end
   end
 end

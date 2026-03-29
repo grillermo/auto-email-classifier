@@ -64,7 +64,6 @@ Rails.application.configure do
 
   config.action_mailer.default_url_options = {
     host: 'auto-email-classifier.chiq.me',
-    port: 3000
   }
 
   config.active_job.queue_adapter = :solid_queue

@@ -90,9 +90,12 @@
     <header class="bg-slate-50 sticky top-0 z-40 border-b border-surface-container">
       <div class="flex items-center w-full px-6 py-3 max-w-7xl mx-auto">
         <span class="text-xl font-bold tracking-tight text-on-surface" style="font-family: Manrope, sans-serif;">Email Classifier</span>
-        <nav class="ml-8 flex items-center gap-6">
-          <a href="/" class="text-on-surface font-semibold border-b-2 border-on-surface pb-1 text-sm">Rules</a>
-        </nav>
+        <% if user_signed_in? %>
+          <nav class="ml-8 flex items-center gap-6">
+            <a href="/" class="text-on-surface font-semibold border-b-2 border-on-surface pb-1 text-sm">Rules</a>
+            <a href="<%= new_gmail_authentication_path %>" class="text-on-surface-variant hover:text-on-surface font-semibold text-sm transition-colors duration-200">Add Gmail Auth</a>
+          </nav>
+        <% end %>
       </div>
     </header>
 
