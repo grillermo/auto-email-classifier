@@ -8,7 +8,7 @@ module Gmail
     def new
       authorizer = build_authorizer
       url = authorizer.get_authorization_url(
-        base_url: gmail_oauth_callback_url,
+        base_url: oauth_callback_url,
         login_hint: current_user.email
       )
       redirect_to url, allow_other_host: true
@@ -21,7 +21,7 @@ module Gmail
       credentials = authorizer.get_and_store_credentials_from_code(
         user_id: current_user.id.to_s,
         code: code,
-        base_url: gmail_oauth_callback_url
+        base_url: oauth_callback_url
       )
 
       gmail_email = fetch_gmail_email(credentials)
@@ -58,6 +58,13 @@ module Gmail
       service = Google::Apis::GmailV1::GmailService.new
       service.authorization = credentials
       service.get_user_profile("me").email_address
+    end
+
+    def oauth_callback_url
+      defaults = Rails.application.routes.default_url_options
+      return gmail_oauth_callback_url if defaults.blank?
+
+      gmail_oauth_callback_url(**defaults.symbolize_keys)
     end
 
     def success_notice_for(gmail_email, existing_auth:)

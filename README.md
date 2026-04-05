@@ -22,7 +22,7 @@ The app loads environment variables from `rules_editor/.env` automatically via `
 
 2. Configure OAuth 2.0 in Google Cloud UI:
 
-- Follow `/Users/grillermo/c/email-classifier/rules_editor/docs/oauth_setup.md`.
+- Follow `/Users/grillermo/c/auto-email-classifier/rules_editor/docs/oauth_setup.md`.
 
 3. Prepare database:
 
@@ -103,7 +103,7 @@ bundle exec ruby import_from_mail_app.rb /Users/grillermo/c/email-classifier/Syn
     - `active: false` in [forwarded_rule_processor.rb](/Users/grillermo/c/email-classifier/rules_editor/app/services/rules/forwarded_rule_processor.rb:74)
 - Kept `.env.example` and updated docs:
   - [.env.example](/Users/grillermo/c/email-classifier/rules_editor/.env.example:1)
-  - OAuth setup guide in [oauth_setup.md](/Users/grillermo/c/email-classifier/rules_editor/docs/oauth_setup.md:1)
+  - OAuth setup guide in [oauth_setup.md](/Users/grillermo/c/auto-email-classifier/rules_editor/docs/oauth_setup.md#L1)
   - README notes that dotenv auto-loads env files in [README.md](/Users/grillermo/c/email-classifier/README.md:1) and [rules_editor/README.md](/Users/grillermo/c/email-classifier/rules_editor/README.md:1)
 
 **Validation done**

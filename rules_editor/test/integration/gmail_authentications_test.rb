@@ -76,6 +76,32 @@ class GmailAuthenticationsTest < ActionDispatch::IntegrationTest
     assert existing_auth.status_active?
   end
 
+  test "authorize action uses APP_BASE_URL-backed callback url" do
+    sign_in(@user)
+    original_defaults = Rails.application.routes.default_url_options
+    Rails.application.routes.default_url_options = {
+      host: "auto-email-classifier.chiq.me",
+      protocol: "https"
+    }
+
+    captured_args = nil
+    authorizer = Object.new.tap do |obj|
+      obj.define_singleton_method(:get_authorization_url) do |**kwargs|
+        captured_args = kwargs
+        "https://accounts.google.com/o/oauth2/auth"
+      end
+    end
+
+    Gmail::OauthCallbackController.stub_any_instance(:build_authorizer, authorizer) do
+      get gmail_oauth_authorize_path
+    end
+
+    assert_redirected_to "https://accounts.google.com/o/oauth2/auth"
+    assert_equal "https://auto-email-classifier.chiq.me/gmail/oauth/callback", captured_args[:base_url]
+  ensure
+    Rails.application.routes.default_url_options = original_defaults
+  end
+
   private
 
   def build_authorizer(credentials)

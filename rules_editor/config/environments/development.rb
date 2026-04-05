@@ -62,10 +62,6 @@ Rails.application.configure do
   # config.generators.apply_rubocop_autocorrect_after_generate!
   config.hosts << ENV['ALLOWED_HOSTS']
 
-  config.action_mailer.default_url_options = {
-    host: 'auto-email-classifier.chiq.me',
-  }
-
   config.active_job.queue_adapter = :solid_queue
   config.solid_queue.logger = ActiveSupport::Logger.new(STDOUT)
   logger           = ActiveSupport::Logger.new(STDOUT)
