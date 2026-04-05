@@ -8,7 +8,6 @@ module Gmail
     def new
       authorizer = build_authorizer
       url = authorizer.get_authorization_url(
-        base_url: oauth_callback_url,
         login_hint: current_user.email
       )
       redirect_to url, allow_other_host: true
@@ -20,8 +19,7 @@ module Gmail
 
       credentials = authorizer.get_and_store_credentials_from_code(
         user_id: current_user.id.to_s,
-        code: code,
-        base_url: oauth_callback_url
+        code: code
       )
 
       gmail_email = fetch_gmail_email(credentials)
@@ -51,7 +49,12 @@ module Gmail
         def store(_id, _token) = nil
         def delete(_id) = nil
       end.new
-      Google::Auth::UserAuthorizer.new(client_id, SCOPE, token_store)
+      Google::Auth::UserAuthorizer.new(
+        client_id,
+        SCOPE,
+        token_store,
+        callback_uri: oauth_callback_url
+      )
     end
 
     def fetch_gmail_email(credentials)

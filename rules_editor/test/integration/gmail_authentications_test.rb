@@ -78,27 +78,46 @@ class GmailAuthenticationsTest < ActionDispatch::IntegrationTest
 
   test "authorize action uses APP_BASE_URL-backed callback url" do
     sign_in(@user)
+    original_app_base_url = ENV["APP_BASE_URL"]
+    original_google_client_id = ENV["GOOGLE_CLIENT_ID"]
+    original_google_client_secret = ENV["GOOGLE_CLIENT_SECRET"]
     original_defaults = Rails.application.routes.default_url_options
     Rails.application.routes.default_url_options = {
       host: "auto-email-classifier.chiq.me",
       protocol: "https"
     }
+    ENV["APP_BASE_URL"] = "https://auto-email-classifier.chiq.me"
+    ENV["GOOGLE_CLIENT_ID"] = "test-client-id.apps.googleusercontent.com"
+    ENV["GOOGLE_CLIENT_SECRET"] = "test-client-secret"
 
-    captured_args = nil
-    authorizer = Object.new.tap do |obj|
+    captured_authorizer_init = nil
+    captured_authorize_args = nil
+    fake_authorizer = Object.new.tap do |obj|
       obj.define_singleton_method(:get_authorization_url) do |**kwargs|
-        captured_args = kwargs
+        captured_authorize_args = kwargs
         "https://accounts.google.com/o/oauth2/auth"
       end
     end
 
-    Gmail::OauthCallbackController.stub_any_instance(:build_authorizer, authorizer) do
-      get gmail_oauth_authorize_path
+    fake_client_id = Object.new
+
+    stub_method(Google::Auth::ClientId, :new, fake_client_id) do
+      stub_method(Google::Auth::UserAuthorizer, :new, ->(*args, **kwargs) {
+        captured_authorizer_init = { args: args, kwargs: kwargs }
+        fake_authorizer
+      }) do
+        get gmail_oauth_authorize_path
+      end
     end
 
     assert_redirected_to "https://accounts.google.com/o/oauth2/auth"
-    assert_equal "https://auto-email-classifier.chiq.me/gmail/oauth/callback", captured_args[:base_url]
+    assert_equal fake_client_id, captured_authorizer_init[:args][0]
+    assert_equal "https://auto-email-classifier.chiq.me/gmail/oauth/callback", captured_authorizer_init[:kwargs][:callback_uri]
+    assert_equal @user.email, captured_authorize_args[:login_hint]
   ensure
+    ENV["APP_BASE_URL"] = original_app_base_url
+    ENV["GOOGLE_CLIENT_ID"] = original_google_client_id
+    ENV["GOOGLE_CLIENT_SECRET"] = original_google_client_secret
     Rails.application.routes.default_url_options = original_defaults
   end
 
