@@ -17,6 +17,7 @@ module Users
       end
 
       magic_link_url = generate_magic_link_url(record, token, remember_me)
+      puts "[DeviseNotifier] Sending magic link url #{magic_link_url}"
       deliver_via_ntfy(ntfy_channel, magic_link_url)
 
       # Return a mail object with deliveries disabled — Devise expects a mail object back
