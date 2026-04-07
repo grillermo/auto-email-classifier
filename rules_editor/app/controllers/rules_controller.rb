@@ -99,9 +99,9 @@ class RulesController < ApplicationController
     flash[:notice] = notice if notice
     flash[:alert] = alert if alert
 
-    return inertia_location(rule_path(@rule)) if request.inertia?
+    return inertia_location(edit_rule_path(@rule)) if request.inertia?
 
-    redirect_to rule_path(@rule)
+    redirect_to edit_rule_path(@rule)
   end
 
   def valid_reorder_payload?(ordered_ids, active_ids)
@@ -125,6 +125,7 @@ class RulesController < ApplicationController
 
   def edit_props(rule, error_messages: [])
     definition = rule.definition.with_indifferent_access
+    previous_rule, next_rule = adjacent_rules_for(rule)
 
     {
       rule: {
@@ -140,8 +141,22 @@ class RulesController < ApplicationController
       },
       updateUrl: rule_path(rule),
       backUrl: rule_path(rule),
+      previousRuleUrl: previous_rule ? edit_rule_path(previous_rule) : nil,
+      nextRuleUrl: next_rule ? edit_rule_path(next_rule) : nil,
       errorMessages: Array(error_messages)
     }
+  end
+
+  def adjacent_rules_for(rule)
+    ordered_rules = current_user.rules.ordered.to_a
+    current_index = ordered_rules.index { |candidate| candidate.id == rule.id }
+
+    return [nil, nil] unless current_index
+
+    previous_rule = current_index.positive? ? ordered_rules[current_index - 1] : nil
+    next_rule = ordered_rules[current_index + 1]
+
+    [previous_rule, next_rule]
   end
 
   def show_props(rule, matching_emails:, gmail_preview:)

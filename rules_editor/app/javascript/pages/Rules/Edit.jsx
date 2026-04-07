@@ -27,7 +27,15 @@ function Toggle({ checked, onChange }) {
   );
 }
 
-export default function RulesEdit({ rule, definition, updateUrl, backUrl, errorMessages = [] }) {
+export default function RulesEdit({
+  rule,
+  definition,
+  updateUrl,
+  backUrl,
+  previousRuleUrl = null,
+  nextRuleUrl = null,
+  errorMessages = [],
+}) {
   const form = useRulesForm({ rule, definition, updateUrl });
   const combinedErrorMessages = [...errorMessages, ...flattenErrorMessages(form.errors)];
   const uniqueErrorMessages = Array.from(new Set(combinedErrorMessages.filter(Boolean)));
@@ -295,6 +303,44 @@ export default function RulesEdit({ rule, definition, updateUrl, backUrl, errorM
             Discard Changes
           </a>
           <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 mr-2">
+              {previousRuleUrl ? (
+                <a
+                  href={previousRuleUrl}
+                  className="flex items-center justify-center w-11 h-11 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
+                  aria-label="Previous rule"
+                  title="Previous rule"
+                >
+                  <span className="material-symbols-outlined text-xl">keyboard_arrow_up</span>
+                </a>
+              ) : (
+                <span
+                  className="flex items-center justify-center w-11 h-11 rounded-xl text-on-surface-variant/40 cursor-not-allowed"
+                  aria-label="No previous rule"
+                  title="No previous rule"
+                >
+                  <span className="material-symbols-outlined text-xl">keyboard_arrow_up</span>
+                </span>
+              )}
+              {nextRuleUrl ? (
+                <a
+                  href={nextRuleUrl}
+                  className="flex items-center justify-center w-11 h-11 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
+                  aria-label="Next rule"
+                  title="Next rule"
+                >
+                  <span className="material-symbols-outlined text-xl">keyboard_arrow_down</span>
+                </a>
+              ) : (
+                <span
+                  className="flex items-center justify-center w-11 h-11 rounded-xl text-on-surface-variant/40 cursor-not-allowed"
+                  aria-label="No next rule"
+                  title="No next rule"
+                >
+                  <span className="material-symbols-outlined text-xl">keyboard_arrow_down</span>
+                </span>
+              )}
+            </div>
             <button
               type="submit"
               form="rule-editor-form"
