@@ -202,13 +202,6 @@ export default function RulesIndex({ activeRules, inactiveRules, reorderUrl }) {
                   </td>
                   <td className="pr-6 py-5 text-right space-x-1">
                     <a
-                      href={rule.showUrl}
-                      aria-label={`Show ${rule.name}`}
-                      className="inline-flex p-2 hover:bg-surface-container-highest rounded-lg text-on-surface-variant hover:text-on-surface transition-all"
-                    >
-                      <span className="material-symbols-outlined text-xl">visibility</span>
-                    </a>
-                    <a
                       href={rule.editUrl}
                       aria-label={`Edit ${rule.name}`}
                       className="inline-flex p-2 hover:bg-surface-container-highest rounded-lg text-on-surface-variant hover:text-on-surface transition-all"
@@ -270,13 +263,6 @@ export default function RulesIndex({ activeRules, inactiveRules, reorderUrl }) {
                       {rule.applicationsCount}
                     </td>
                     <td className="pr-6 py-5 text-right space-x-1">
-                      <a
-                        href={rule.showUrl}
-                        aria-label={`Show ${rule.name}`}
-                        className="inline-flex p-2 hover:bg-surface-container-highest rounded-lg text-on-surface-variant transition-all"
-                      >
-                        <span className="material-symbols-outlined text-xl">visibility</span>
-                      </a>
                       <a
                         href={rule.editUrl}
                         aria-label={`Edit ${rule.name}`}

@@ -28,8 +28,6 @@
           <td class="px-4 py-3 text-slate-600"><%= rule.conditions.size %></td>
           <td class="px-4 py-3 text-slate-600"><%= rule.actions.size %></td>
           <td class="px-4 py-3 text-right">
-            <%= link_to "Show", rule_path(rule), class: "text-sky-700 hover:underline" %>
-            <span class="px-1 text-slate-300">|</span>
             <%= link_to "Edit", edit_rule_path(rule), class: "text-sky-700 hover:underline" %>
           </td>
         </tr>
@@ -55,8 +53,6 @@
             <td class="px-4 py-3 font-mono text-slate-500"><%= rule.priority %></td>
             <td class="px-4 py-3 text-slate-500"><%= rule.name %></td>
             <td class="px-4 py-3 text-right">
-              <%= link_to "Show", rule_path(rule), class: "text-sky-700 hover:underline" %>
-              <span class="px-1 text-slate-300">|</span>
               <%= link_to "Edit", edit_rule_path(rule), class: "text-sky-700 hover:underline" %>
             </td>
           </tr>

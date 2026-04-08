@@ -30,7 +30,7 @@ class RulesEditTest < ActionDispatch::IntegrationTest
     patch rule_path(@rule), params: valid_rule_params, headers: inertia_headers
 
     assert_response :conflict
-    assert_equal rule_path(@rule), response.headers["X-Inertia-Location"]
+    assert_equal edit_rule_path(@rule), response.headers["X-Inertia-Location"]
     assert_equal "Updated rule", @rule.reload.name
   end
 
@@ -62,7 +62,7 @@ class RulesEditTest < ActionDispatch::IntegrationTest
         headers: inertia_headers
 
       assert_response :conflict
-      assert_equal rule_path(@rule), response.headers["X-Inertia-Location"]
+      assert_equal edit_rule_path(@rule), response.headers["X-Inertia-Location"]
       assert_match "matched: 3", flash[:notice]
       assert_match "applied: 2", flash[:notice]
     ensure
