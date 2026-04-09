@@ -15,8 +15,8 @@ class Rule < ApplicationRecord
 
   validates :name, presence: true
   validates :priority, numericality: { only_integer: true, greater_than: 0 }
-  validates :definition, uniqueness: { scope: :user_id }
   validate :validate_definition
+  validate :validate_conditions_uniqueness, if: :user_id?
 
   def self.next_priority
     maximum(:priority).to_i + 1
@@ -93,5 +93,17 @@ class Rule < ApplicationRecord
         end
       end
     end
+  end
+
+  def validate_conditions_uniqueness
+    return if conditions.empty?
+
+    duplicate_exists = self.class
+      .where(user_id: user_id)
+      .where("definition->'conditions' = ?::jsonb", conditions.to_json)
+      .where.not(id: id)
+      .exists?
+
+    errors.add(:definition, "conditions have already been taken") if duplicate_exists
   end
 end

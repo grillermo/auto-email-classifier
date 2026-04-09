@@ -31,7 +31,7 @@ class RuleTest < ActiveSupport::TestCase
     assert_not rule.valid?
   end
 
-  test "is invalid when definition is duplicated for same user" do
+  test "is invalid when conditions are duplicated for same user" do
     @user.rules.create!(
       name: "Original",
       priority: 1,
@@ -41,22 +41,38 @@ class RuleTest < ActiveSupport::TestCase
     duplicate = @user.rules.new(
       name: "Duplicate",
       priority: 2,
-      definition: valid_definition
+      definition: valid_definition(actions: [{ "type" => "trash" }])
     )
 
     assert_not duplicate.valid?
-    assert_includes duplicate.errors[:definition], "has already been taken"
+    assert_includes duplicate.errors[:definition], "conditions have already been taken"
   end
 
-  test "same definition is valid for different users" do
+  test "same conditions are valid for different users" do
     other_user = User.create!(email: "other@example.com")
     @user.rules.create!(name: "Original", priority: 1, definition: valid_definition)
 
-    other_rule = other_user.rules.new(name: "Other", priority: 1, definition: valid_definition)
+    other_rule = other_user.rules.new(
+      name: "Other",
+      priority: 1,
+      definition: valid_definition(actions: [{ "type" => "trash" }])
+    )
     assert other_rule.valid?
   end
 
-  test "database enforces unique definition per user" do
+  test "different conditions are valid for same user" do
+    @user.rules.create!(name: "Original", priority: 1, definition: valid_definition)
+
+    other_rule = @user.rules.new(
+      name: "Different",
+      priority: 2,
+      definition: valid_definition(value: "other-billing@")
+    )
+
+    assert other_rule.valid?
+  end
+
+  test "database enforces unique conditions per user" do
     now = Time.current
     definition = valid_definition
 
@@ -80,13 +96,44 @@ class RuleTest < ActiveSupport::TestCase
           name: "Duplicate",
           priority: 2,
           active: true,
-          definition: definition,
+          definition: definition.merge("actions" => [{ "type" => "trash" }]),
           metadata: {},
           created_at: now,
           updated_at: now
         }
       ])
     end
+  end
+
+  test "database allows same conditions for different users" do
+    now = Time.current
+    other_user = User.create!(email: "other@example.com")
+    definition = valid_definition
+
+    Rule.insert_all!([
+      {
+        user_id: @user.id,
+        name: "Original",
+        priority: 1,
+        active: true,
+        definition: definition,
+        metadata: {},
+        created_at: now,
+        updated_at: now
+      },
+      {
+        user_id: other_user.id,
+        name: "Other user",
+        priority: 1,
+        active: true,
+        definition: definition,
+        metadata: {},
+        created_at: now,
+        updated_at: now
+      }
+    ])
+
+    assert_equal 2, Rule.where(definition: definition).count
   end
 
   test "next_priority returns one more than the highest existing priority" do
@@ -231,11 +278,11 @@ class RuleTest < ActiveSupport::TestCase
 
   private
 
-  def valid_definition(value: "billing@")
+  def valid_definition(value: "billing@", actions: [{ "type" => "mark_read" }])
     {
       "match_mode" => "all",
       "conditions" => [{ "field" => "sender", "operator" => "contains", "value" => value }],
-      "actions" => [{ "type" => "mark_read" }]
+      "actions" => actions
     }
   end
 end
