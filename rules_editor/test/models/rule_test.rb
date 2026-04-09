@@ -197,6 +197,38 @@ class RuleTest < ActiveSupport::TestCase
     assert_includes rule.errors[:definition], "label action requires a label"
   end
 
+  test "run_script action without script fails validation" do
+    defn = valid_definition
+    defn["actions"] = [{ type: "run_script", script: "" }]
+    rule = @user.rules.new(name: "R", priority: 1, definition: defn)
+
+    stub_method(Rules::ActionScripts, :available_scripts, []) do
+      assert_not rule.valid?
+      assert_includes rule.errors[:definition], "run_script action requires a script"
+    end
+  end
+
+  test "run_script action with unavailable script fails validation" do
+    defn = valid_definition
+    defn["actions"] = [{ type: "run_script", script: "missing.sh" }]
+    rule = @user.rules.new(name: "R", priority: 1, definition: defn)
+
+    stub_method(Rules::ActionScripts, :available_scripts, ["present.sh"]) do
+      assert_not rule.valid?
+      assert_includes rule.errors[:definition], "run_script action script is invalid"
+    end
+  end
+
+  test "run_script action with available script is valid" do
+    defn = valid_definition
+    defn["actions"] = [{ type: "run_script", script: "present.sh" }]
+    rule = @user.rules.new(name: "R", priority: 1, definition: defn)
+
+    stub_method(Rules::ActionScripts, :available_scripts, ["present.sh"]) do
+      assert rule.valid?
+    end
+  end
+
   private
 
   def valid_definition(value: "billing@")

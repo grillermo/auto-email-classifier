@@ -103,6 +103,19 @@ class RulesDefinitionBuilderTest < ActiveSupport::TestCase
     assert_not result[:actions].first.key?(:label)
   end
 
+  test "script included for run_script action" do
+    params = {
+      match_mode: "all",
+      conditions_attributes: [{ field: "sender", operator: "contains", value: "x@", case_sensitive: false }],
+      actions_attributes: [{ type: "run_script", script: "process.sh", label: "ignored" }]
+    }
+    result = Rules::DefinitionBuilder.new(params).build
+    action = result[:actions].first
+    assert_equal "run_script", action[:type]
+    assert_equal "process.sh", action[:script]
+    assert_not action.key?(:label)
+  end
+
   test "handles conditions_attributes as a Hash (ActionController::Parameters style)" do
     # Simulates how Rails submits nested params: {"0" => {...}, "1" => {...}}
     params = {

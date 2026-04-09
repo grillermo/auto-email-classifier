@@ -72,7 +72,7 @@ class RulesController < ApplicationController
       :priority,
       :match_mode,
       conditions_attributes: %i[field operator value case_sensitive],
-      actions_attributes: %i[type label]
+      actions_attributes: %i[type label script]
     )
   end
 
@@ -127,6 +127,7 @@ class RulesController < ApplicationController
         conditions: serialize_conditions_for_edit(definition[:conditions]),
         actions: serialize_actions_for_edit(definition[:actions])
       },
+      actionScripts: Rules::ActionScripts.available_scripts,
       updateUrl: rule_path(rule),
       backUrl: rules_path,
       previousRuleUrl: previous_rule ? edit_rule_path(previous_rule) : nil,
@@ -176,7 +177,8 @@ class RulesController < ApplicationController
 
       {
         type: type,
-        label: action[:label].to_s
+        label: action[:label].to_s,
+        script: action[:script].to_s
       }
     end
 
@@ -195,6 +197,6 @@ class RulesController < ApplicationController
 
   def normalize_action_type(value)
     value = value.to_s
-    %w[add_label remove_label mark_read trash].include?(value) ? value : "mark_read"
+    %w[add_label remove_label mark_read trash run_script].include?(value) ? value : "mark_read"
   end
 end

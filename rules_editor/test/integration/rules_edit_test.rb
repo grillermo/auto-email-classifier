@@ -26,6 +26,16 @@ class RulesEditTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "&quot;component&quot;:&quot;Rules/Edit&quot;"
   end
 
+  test "edit includes executable action scripts in props" do
+    stub_method(Rules::ActionScripts, :available_scripts, ["sync.sh", "mail/archive.rb"]) do
+      get edit_rule_path(@rule), headers: inertia_headers
+
+      assert_response :success
+      payload = JSON.parse(response.body)
+      assert_equal ["sync.sh", "mail/archive.rb"], payload.dig("props", "actionScripts")
+    end
+  end
+
   test "successful inertia update redirects with inertia location" do
     patch rule_path(@rule), params: valid_rule_params, headers: inertia_headers
 
@@ -103,7 +113,7 @@ class RulesEditTest < ActionDispatch::IntegrationTest
           { field: "sender", operator: "contains", value: "updated@example.com", case_sensitive: false }
         ],
         actions_attributes: [
-          { type: "mark_read", label: "" }
+          { type: "mark_read", label: "", script: "" }
         ]
       },
       commit_action: "save"

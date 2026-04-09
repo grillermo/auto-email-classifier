@@ -75,13 +75,22 @@ class Rule < ApplicationRecord
     actions.each do |action|
       type = action[:type]
 
-      unless %w[add_label remove_label mark_read trash].include?(type)
+      unless %w[add_label remove_label mark_read trash run_script].include?(type)
         errors.add(:definition, "action type is invalid")
         next
       end
 
       if %w[add_label remove_label].include?(type) && action[:label].to_s.strip.empty?
         errors.add(:definition, "label action requires a label")
+      end
+
+      if type == "run_script"
+        script = action[:script].to_s.strip
+        if script.empty?
+          errors.add(:definition, "run_script action requires a script")
+        elsif !Rules::ActionScripts.available_scripts.include?(script)
+          errors.add(:definition, "run_script action script is invalid")
+        end
       end
     end
   end

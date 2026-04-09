@@ -3,6 +3,18 @@
 require "test_helper"
 
 class RulesActionExecutorTest < ActiveSupport::TestCase
+  class FakeScriptRunner
+    attr_reader :runs
+
+    def initialize
+      @runs = []
+    end
+
+    def run!(script:, message:)
+      @runs << { script: script, message: message }
+    end
+  end
+
   class FakeGmailClient
     attr_reader :mark_read_ids, :trash_ids, :modifications, :ensured_labels
 
@@ -134,6 +146,39 @@ class RulesActionExecutorTest < ActiveSupport::TestCase
 
     assert_empty client.ensured_labels
     assert_empty client.modifications
+  end
+
+  test "run_script in live mode calls script runner" do
+    rule = rule_with_actions([{ type: "run_script", script: "process.sh" }])
+    client = FakeGmailClient.new
+    runner = FakeScriptRunner.new
+
+    result = Rules::ActionExecutor.new(
+      rule: rule,
+      message: MESSAGE,
+      gmail_client: client,
+      script_runner: runner
+    ).execute!
+
+    assert_equal [{ script: "process.sh", message: MESSAGE.with_indifferent_access }], runner.runs
+    assert_equal [{ type: "run_script", script: "process.sh" }], result
+  end
+
+  test "run_script in dry_run mode does not call script runner" do
+    rule = rule_with_actions([{ type: "run_script", script: "process.sh" }])
+    client = FakeGmailClient.new
+    runner = FakeScriptRunner.new
+
+    result = Rules::ActionExecutor.new(
+      rule: rule,
+      message: MESSAGE,
+      gmail_client: client,
+      dry_run: true,
+      script_runner: runner
+    ).execute!
+
+    assert_empty runner.runs
+    assert_equal [{ type: "run_script", script: "process.sh" }], result
   end
 
   # --- multiple actions ---

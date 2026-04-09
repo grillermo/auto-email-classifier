@@ -48,6 +48,7 @@ module Rules
 
         payload = { type: type }
         payload[:label] = action[:label].to_s.strip if %w[add_label remove_label].include?(type)
+        payload[:script] = action[:script].to_s.strip if type == "run_script"
         payload
       end
     end

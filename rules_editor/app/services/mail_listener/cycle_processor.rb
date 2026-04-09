@@ -85,8 +85,9 @@ module MailListener
 
     def format_actions(actions)
       Array(actions).map do |action|
+        script = action[:script]
         label = action[:label]
-        label ? "#{action[:type]}(#{label})" : action[:type]
+        script ? "#{action[:type]}(#{script})" : (label ? "#{action[:type]}(#{label})" : action[:type])
       end.join(",")
     end
   end

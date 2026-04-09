@@ -104,6 +104,7 @@ module Rules
 
     def format_actions(actions)
       Array(actions).map do |action|
+        next "#{action[:type]} (#{action[:script]})" if action[:script].present?
         next action[:type] unless action[:label].present?
 
         "#{action[:type]} (#{action[:label]})"

@@ -2,7 +2,7 @@ import { useForm } from "@inertiajs/react";
 
 export const CONDITION_FIELDS = ["sender", "subject", "body"];
 export const CONDITION_OPERATORS = ["contains"];
-export const ACTION_TYPES = ["add_label", "remove_label", "mark_read", "trash"];
+export const ACTION_TYPES = ["add_label", "remove_label", "mark_read", "trash", "run_script"];
 
 const DEFAULT_CONDITION = {
   field: "sender",
@@ -14,10 +14,15 @@ const DEFAULT_CONDITION = {
 const DEFAULT_ACTION = {
   type: "mark_read",
   label: "",
+  script: "",
 };
 
 export function actionRequiresLabel(type) {
   return type === "add_label" || type === "remove_label";
+}
+
+export function actionRequiresScript(type) {
+  return type === "run_script";
 }
 
 function asBoolean(value) {
@@ -51,6 +56,7 @@ function normalizeAction(action) {
   return {
     type,
     label: action?.label?.toString() || "",
+    script: action?.script?.toString() || "",
   };
 }
 
@@ -79,6 +85,7 @@ function mapActionsForParams(actions) {
   return actions.map((action) => ({
     type: action.type,
     label: actionRequiresLabel(action.type) ? action.label : "",
+    script: actionRequiresScript(action.type) ? action.script : "",
   }));
 }
 
@@ -170,6 +177,7 @@ export function useRulesForm({ rule, definition, updateUrl }) {
             ...action,
             type: value,
             label: actionRequiresLabel(value) ? action.label : "",
+            script: actionRequiresScript(value) ? action.script : "",
           };
         }
 

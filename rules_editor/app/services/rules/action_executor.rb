@@ -2,11 +2,12 @@
 
 module Rules
   class ActionExecutor
-    def initialize(rule:, message:, gmail_client:, dry_run: false)
+    def initialize(rule:, message:, gmail_client:, dry_run: false, script_runner: ScriptRunner.new)
       @rule = rule
       @message = message.with_indifferent_access
       @gmail_client = gmail_client
       @dry_run = dry_run
+      @script_runner = script_runner
     end
 
     def execute!
@@ -36,6 +37,10 @@ module Rules
         when "trash"
           gmail_client.trash_message(message[:id]) unless dry_run?
           applied_actions << { type: type }
+        when "run_script"
+          script = action[:script].to_s
+          script_runner.run!(script: script, message: message) unless dry_run?
+          applied_actions << { type: type, script: script }
         end
       end
 
@@ -44,7 +49,7 @@ module Rules
 
     private
 
-    attr_reader :rule, :message, :gmail_client
+    attr_reader :rule, :message, :gmail_client, :script_runner
 
     def dry_run?
       @dry_run

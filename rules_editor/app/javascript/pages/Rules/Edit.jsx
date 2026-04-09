@@ -4,6 +4,7 @@ import {
   CONDITION_FIELDS,
   CONDITION_OPERATORS,
   actionRequiresLabel,
+  actionRequiresScript,
   useRulesForm,
 } from "../../rules_form";
 
@@ -30,6 +31,7 @@ function Toggle({ checked, onChange }) {
 export default function RulesEdit({
   rule,
   definition,
+  actionScripts = [],
   updateUrl,
   backUrl,
   previousRuleUrl = null,
@@ -236,6 +238,10 @@ export default function RulesEdit({
           <div className="space-y-4">
             {form.data.actions.map((action, index) => {
               const requiresLabel = actionRequiresLabel(action.type);
+              const requiresScript = actionRequiresScript(action.type);
+              const scriptOptions = action.script && !actionScripts.includes(action.script)
+                ? [action.script, ...actionScripts]
+                : actionScripts;
               return (
                 <div
                   key={`action-${index}`}
@@ -255,17 +261,36 @@ export default function RulesEdit({
                     </select>
                   </div>
                   <div className="w-full md:flex-1">
-                    <input
-                      type="text"
-                      value={action.label}
-                      onChange={(event) => form.updateAction(index, "label", event.target.value)}
-                      required={requiresLabel}
-                      disabled={!requiresLabel}
-                      placeholder="Label name..."
-                      className={`w-full bg-white border-0 text-sm py-2.5 px-3 rounded-lg focus:ring-2 focus:ring-primary/20 text-on-surface ${
-                        !requiresLabel ? "opacity-40 cursor-not-allowed" : ""
-                      }`}
-                    />
+                    {requiresScript ? (
+                      <select
+                        value={action.script}
+                        onChange={(event) => form.updateAction(index, "script", event.target.value)}
+                        required
+                        disabled={scriptOptions.length === 0}
+                        className="w-full bg-white border-0 text-sm py-2.5 px-3 rounded-lg focus:ring-2 focus:ring-primary/20 text-on-surface"
+                      >
+                        <option value="" disabled>
+                          {scriptOptions.length > 0 ? "Select script..." : "No executable scripts found"}
+                        </option>
+                        {scriptOptions.map((script) => (
+                          <option key={script} value={script}>
+                            {script}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={action.label}
+                        onChange={(event) => form.updateAction(index, "label", event.target.value)}
+                        required={requiresLabel}
+                        disabled={!requiresLabel}
+                        placeholder="Label name..."
+                        className={`w-full bg-white border-0 text-sm py-2.5 px-3 rounded-lg focus:ring-2 focus:ring-primary/20 text-on-surface ${
+                          !requiresLabel ? "opacity-40 cursor-not-allowed" : ""
+                        }`}
+                      />
+                    )}
                   </div>
                   <button
                     type="button"
