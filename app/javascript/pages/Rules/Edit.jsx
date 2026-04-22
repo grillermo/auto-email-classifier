@@ -5,6 +5,7 @@ import {
   CONDITION_OPERATORS,
   actionRequiresLabel,
   actionRequiresScript,
+  useDeleteRuleForm,
   useRulesForm,
 } from "../../rules_form";
 
@@ -33,12 +34,14 @@ export default function RulesEdit({
   definition,
   actionScripts = [],
   updateUrl,
+  deleteUrl,
   backUrl,
   previousRuleUrl = null,
   nextRuleUrl = null,
   errorMessages = [],
 }) {
   const form = useRulesForm({ rule, definition, updateUrl });
+  const deleteForm = useDeleteRuleForm({ deleteUrl });
   const combinedErrorMessages = [...errorMessages, ...flattenErrorMessages(form.errors)];
   const uniqueErrorMessages = Array.from(new Set(combinedErrorMessages.filter(Boolean)));
 
@@ -366,6 +369,18 @@ export default function RulesEdit({
                 </span>
               )}
             </div>
+            <button
+              type="button"
+              disabled={form.processing || deleteForm.processing}
+              onClick={() => {
+                if (confirm("Delete this rule?")) {
+                  deleteForm.destroy();
+                }
+              }}
+              className="text-error font-bold px-6 py-2.5 rounded-xl hover:bg-error-container transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              Delete
+            </button>
             <button
               type="submit"
               form="rule-editor-form"

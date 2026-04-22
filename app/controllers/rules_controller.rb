@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class RulesController < ApplicationController
-  before_action :set_rule, only: %i[edit update]
+  before_action :set_rule, only: %i[edit update destroy]
 
   def index
     active_rules   = current_user.rules.active.ordered.preload(:rule_applications)
@@ -29,6 +29,11 @@ class RulesController < ApplicationController
     else
       render inertia: "Rules/Edit", props: edit_props(@rule, error_messages: @rule.errors.full_messages), status: :unprocessable_entity
     end
+  end
+
+  def destroy
+    @rule.destroy!
+    redirect_to edit_rule_path(@rule), notice: "Rule deleted"
   end
 
   def reorder
@@ -129,6 +134,7 @@ class RulesController < ApplicationController
       },
       actionScripts: Rules::ActionScripts.available_scripts,
       updateUrl: rule_path(rule),
+      deleteUrl: rule_path(rule),
       backUrl: rules_path,
       previousRuleUrl: previous_rule ? edit_rule_path(previous_rule) : nil,
       nextRuleUrl: next_rule ? edit_rule_path(next_rule) : nil,

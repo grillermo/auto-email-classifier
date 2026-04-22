@@ -89,6 +89,16 @@ function mapActionsForParams(actions) {
   }));
 }
 
+export function useDeleteRuleForm({ deleteUrl }) {
+  const form = useForm({});
+
+  const destroy = () => {
+    form.delete(deleteUrl);
+  };
+
+  return { ...form, destroy };
+}
+
 export function useRulesForm({ rule, definition, updateUrl }) {
   const form = useForm({
     name: rule.name || "",
