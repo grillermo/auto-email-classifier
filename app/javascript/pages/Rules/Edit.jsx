@@ -168,9 +168,9 @@ export default function RulesEdit({
                     onChange={(event) => form.updateCondition(index, "field", event.target.value)}
                     className="w-full bg-white border-0 text-sm py-2.5 px-3 rounded-lg focus:ring-2 focus:ring-primary/20 text-on-surface"
                   >
-                    {CONDITION_FIELDS.map((field) => (
-                      <option key={field} value={field}>
-                        {field}
+                    {CONDITION_FIELDS.map(({ value, label }) => (
+                      <option key={value} value={value}>
+                        {label}
                       </option>
                     ))}
                   </select>
@@ -183,9 +183,9 @@ export default function RulesEdit({
                     }
                     className="w-full bg-white border-0 text-sm py-2.5 px-3 rounded-lg focus:ring-2 focus:ring-primary/20 text-on-surface"
                   >
-                    {CONDITION_OPERATORS.map((operator) => (
-                      <option key={operator} value={operator}>
-                        {operator}
+                    {CONDITION_OPERATORS.map(({ value, label }) => (
+                      <option key={value} value={value}>
+                        {label}
                       </option>
                     ))}
                   </select>
@@ -256,9 +256,9 @@ export default function RulesEdit({
                       onChange={(event) => form.updateAction(index, "type", event.target.value)}
                       className="w-full bg-white border-0 text-sm py-2.5 px-3 rounded-lg focus:ring-2 focus:ring-primary/20 text-on-surface"
                     >
-                      {ACTION_TYPES.map((type) => (
-                        <option key={type} value={type}>
-                          {type}
+                      {ACTION_TYPES.map(({ value, label }) => (
+                        <option key={value} value={value}>
+                          {label}
                         </option>
                       ))}
                     </select>

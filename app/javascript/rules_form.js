@@ -1,8 +1,20 @@
 import { useForm } from "@inertiajs/react";
 
-export const CONDITION_FIELDS = ["sender", "subject", "body"];
-export const CONDITION_OPERATORS = ["contains"];
-export const ACTION_TYPES = ["add_label", "remove_label", "mark_read", "trash", "run_script"];
+export const CONDITION_FIELDS = [
+  { value: "sender", label: "Sender" },
+  { value: "subject", label: "Subject" },
+  { value: "body", label: "Body" },
+];
+export const CONDITION_OPERATORS = [
+  { value: "contains", label: "Contains" },
+];
+export const ACTION_TYPES = [
+  { value: "add_label", label: "Add label" },
+  { value: "remove_label", label: "Remove label" },
+  { value: "mark_read", label: "Mark read" },
+  { value: "trash", label: "Trash" },
+  { value: "run_script", label: "Run script" },
+];
 
 const DEFAULT_CONDITION = {
   field: "sender",
@@ -38,8 +50,8 @@ function asBoolean(value) {
 }
 
 function normalizeCondition(condition) {
-  const field = CONDITION_FIELDS.includes(condition?.field) ? condition.field : DEFAULT_CONDITION.field;
-  const operator = CONDITION_OPERATORS.includes(condition?.operator)
+  const field = CONDITION_FIELDS.some((f) => f.value === condition?.field) ? condition.field : DEFAULT_CONDITION.field;
+  const operator = CONDITION_OPERATORS.some((o) => o.value === condition?.operator)
     ? condition.operator
     : DEFAULT_CONDITION.operator;
 
@@ -52,7 +64,7 @@ function normalizeCondition(condition) {
 }
 
 function normalizeAction(action) {
-  const type = ACTION_TYPES.includes(action?.type) ? action.type : DEFAULT_ACTION.type;
+  const type = ACTION_TYPES.some((a) => a.value === action?.type) ? action.type : DEFAULT_ACTION.type;
   return {
     type,
     label: action?.label?.toString() || "",
