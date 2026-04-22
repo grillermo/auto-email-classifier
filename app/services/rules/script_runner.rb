@@ -2,7 +2,11 @@
 
 module Rules
   class ScriptRunner
-    attr_reader :message
+    attr_reader :message, :gmail_client
+
+    def initialize(gmail_client: nil)
+      @gmail_client = gmail_client
+    end
 
     def run!(script:, message:)
       script_path = ActionScripts.path_for(script)

@@ -89,3 +89,4 @@ graphify-out
 /config/*.key
 
 logs
+.DS_Store

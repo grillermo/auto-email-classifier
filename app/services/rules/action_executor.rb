@@ -2,12 +2,12 @@
 
 module Rules
   class ActionExecutor
-    def initialize(rule:, message:, gmail_client:, dry_run: false, script_runner: ScriptRunner.new)
+    def initialize(rule:, message:, gmail_client:, dry_run: false, script_runner: nil)
       @rule = rule
       @message = message.with_indifferent_access
       @gmail_client = gmail_client
       @dry_run = dry_run
-      @script_runner = script_runner
+      @script_runner = script_runner || ScriptRunner.new(gmail_client: gmail_client)
     end
 
     def execute!

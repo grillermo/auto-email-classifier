@@ -33,7 +33,7 @@ class RulesController < ApplicationController
 
   def destroy
     @rule.destroy!
-    redirect_to edit_rule_path(@rule), notice: "Rule deleted"
+    redirect_to rules_path, notice: "Rule deleted"
   end
 
   def reorder
