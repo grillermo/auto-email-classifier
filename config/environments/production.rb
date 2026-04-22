@@ -67,5 +67,17 @@ Rails.application.configure do
   #
   # Skip DNS rebinding protection for the default health check endpoint.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+  config.hosts.append('auto-email-classifier.chiq.me', '192.168.1.1')
 
+  config.active_job.queue_adapter = :solid_queue
+  config.solid_queue.logger = ActiveSupport::Logger.new(STDOUT)
+  logger           = ActiveSupport::Logger.new(STDOUT)
+  logger.formatter = config.log_formatter
+  config.logger    = ActiveSupport::TaggedLogging.new(logger)
+
+  # 1. Force all links/redirects to use HTTPS
+  config.force_ssl = true
+
+  # 2. Tell Rails to trust the proxy headers (Cloudflare + Caddy)
+  config.assume_ssl = true
 end

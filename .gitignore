@@ -84,3 +84,7 @@ yarn-debug.log*
 !/app/assets/builds/.keep
 .graphify*
 graphify-out
+
+# Ignore key files for decrypting credentials and more.
+/config/*.key
+

@@ -15,6 +15,15 @@ test:
   <<: *default
   database: <%= ENV.fetch("DATABASE_TEST_NAME", "email_rules_test") %>
 
-production:
-  <<: *default
-  url: <%= ENV["DATABASE_URL"] %>
+production: 
+  primary: 
+    <<: *default
+    database: 'email_rules_production'
+  cache:
+    <<: *default
+    migrations_paths: db/cache_migrate
+    database: 'email_rules_production'
+  queue:
+    <<: *default
+    migrations_paths: db/cache_migrate
+    database: 'email_rules_production'
