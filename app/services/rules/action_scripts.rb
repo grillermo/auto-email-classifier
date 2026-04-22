@@ -8,7 +8,6 @@ module Rules
 
         root.glob("**/*").filter_map do |path|
           next unless path.file?
-          next unless path.executable?
 
           path.relative_path_from(root).to_s
         end.sort
@@ -21,7 +20,6 @@ module Rules
         candidate = root.join(script_path).cleanpath
         return nil unless candidate.to_s.start_with?("#{root.to_s}/") || candidate == root
         return nil unless candidate.file?
-        return nil unless candidate.executable?
 
         candidate
       end

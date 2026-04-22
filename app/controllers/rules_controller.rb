@@ -58,7 +58,9 @@ class RulesController < ApplicationController
   private
 
   def apply_now
-    result = Rules::OneOffApplier.new(rule: @rule).apply!(query: "in:inbox")
+    auth = GmailAuthentication.status_active.includes(user: :ntfy_channel).first
+    gmail_client = Gmail::Client.for_authentication(auth)
+    result = Rules::OneOffApplier.new(rule: @rule, gmail_client: gmail_client).apply!(query: "in:inbox")
     redirect_to_rule_with_flash(
       notice: "Rule saved and applied (matched: #{result[:matched_count]}, applied: #{result[:applied_count]})"
     )

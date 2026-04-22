@@ -3,4 +3,6 @@
 require_relative "../config/environment"
 require "solid_queue/cli"
 
+MailListener::ProcessCycleJob.perform_later
+
 SolidQueue::Cli.start(ARGV)

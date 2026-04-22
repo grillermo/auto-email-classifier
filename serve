@@ -1,2 +1,2 @@
 export RAILS_ENV=production
-parallel --env RAILS_ENV --ungroup ::: "bin/jobs" "rails assets:precompile && bun run build && rails s -p 3001"
+parallel --env RAILS_ENV --ungroup ::: "bin/jobs" "rails assets:precompile && rails s -p 3001"
