@@ -94,7 +94,7 @@ module Rules
     end
 
     def classify_label_auto_rule
-      ENV.fetch("AUTO_CLASSIFY_LABEL", DEFAULT_LABEL_TO_CLASSIFY)
+      DEFAULT_LABEL_TO_CLASSIFY
     end
 
     def classify_query
@@ -115,6 +115,7 @@ module Rules
       sender = message_data.fetch(:sender)
       subject = message_data.fetch(:subject)
 
+      # Default rules and custom
       user.rules.new(
         name: "Auto: #{sender} | #{subject}".slice(0, 255),
         active: false,

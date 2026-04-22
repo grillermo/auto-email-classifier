@@ -44,8 +44,6 @@ class RulesAutoRulesCreatorTest < ActiveSupport::TestCase
   end
 
   test "dry run uses classify label query and logs rule creation without mutating gmail" do
-    previous_classify_label = ENV.delete("AUTO_CLASSIFY_LABEL")
-
     result = nil
     output = nil
     begin
@@ -58,8 +56,6 @@ class RulesAutoRulesCreatorTest < ActiveSupport::TestCase
           end
         end.first
       end
-    ensure
-      ENV["AUTO_CLASSIFY_LABEL"] = previous_classify_label
     end
 
     assert_equal 1, result[:inspected]
