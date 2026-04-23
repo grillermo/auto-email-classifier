@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_09_001000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_22_231949) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -30,6 +30,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_09_001000) do
     t.text "access_token"
     t.datetime "created_at", null: false
     t.string "email", null: false
+    t.jsonb "labels", default: []
     t.datetime "last_refreshed_at"
     t.text "refresh_token"
     t.string "scopes"

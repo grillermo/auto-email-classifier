@@ -33,6 +33,7 @@ export default function RulesEdit({
   rule,
   definition,
   actionScripts = [],
+  gmailLabels = [],
   updateUrl,
   deleteUrl,
   backUrl,
@@ -279,6 +280,18 @@ export default function RulesEdit({
                           <option key={script} value={script}>
                             {script}
                           </option>
+                        ))}
+                      </select>
+                    ) : requiresLabel && gmailLabels.length > 0 ? (
+                      <select
+                        value={action.label}
+                        onChange={(event) => form.updateAction(index, "label", event.target.value)}
+                        required
+                        className="w-full bg-white border-0 text-sm py-2.5 px-3 rounded-lg focus:ring-2 focus:ring-primary/20 text-on-surface"
+                      >
+                        <option value="" disabled>Select label...</option>
+                        {gmailLabels.map((name) => (
+                          <option key={name} value={name}>{name}</option>
                         ))}
                       </select>
                     ) : (

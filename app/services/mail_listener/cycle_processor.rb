@@ -12,6 +12,23 @@ module MailListener
     end
 
     def process!
+      fetch_and_store_labels
+
+      process_rules
+    rescue StandardError => e
+      puts "[listener] cycle failed: #{e.class} #{e.message}"
+      puts e.backtrace.first(5).join("\n")
+
+      if e.class.name == "Google::Auth::AuthorizationError" || e.message.include?("Authorization failed")
+        send_auth_error_ntfy_notification
+      end
+    end
+
+    private
+
+    attr_reader :gmail_client, :gmail_authentication, :user
+
+    def process_rules
       forward_result = Rules::AutoRulesCreator.new(gmail_authentication: gmail_authentication, dry_run: dry_run?).process!
 
       rules = user.rules.active.ordered.to_a
@@ -29,18 +46,7 @@ module MailListener
 
         log_rule_result(message_id: message_id, result: result)
       end
-    rescue StandardError => e
-      puts "[listener] cycle failed: #{e.class} #{e.message}"
-      puts e.backtrace.first(5).join("\n")
-
-      if e.class.name == "Google::Auth::AuthorizationError" || e.message.include?("Authorization failed")
-        send_auth_error_ntfy_notification
-      end
     end
-
-    private
-
-    attr_reader :gmail_client, :gmail_authentication, :user
 
     def send_auth_error_ntfy_notification
       ntfy_channel = user.ntfy_channel
@@ -60,6 +66,13 @@ module MailListener
 
     def dry_run?
       @dry_run
+    end
+
+    def fetch_and_store_labels
+      labels = gmail_client.list_labels
+      gmail_authentication.update_columns(labels: labels)
+    rescue StandardError => e
+      puts "[listener] label fetch failed: #{e.class} #{e.message}"
     end
 
     def primary_query

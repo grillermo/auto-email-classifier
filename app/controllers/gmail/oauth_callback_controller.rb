@@ -32,6 +32,8 @@ module Gmail
         email: gmail_email
       )
 
+      fetch_and_store_labels(auth, credentials)
+
       redirect_to root_path, notice: success_notice_for(gmail_email, existing_auth:)
     rescue ActionController::ParameterMissing, Google::Auth::AuthorizationError => e
       redirect_to root_path, alert: "Gmail authorization failed: #{e.message}"
@@ -55,6 +57,16 @@ module Gmail
         token_store,
         callback_uri: oauth_callback_url
       )
+    end
+
+    def fetch_and_store_labels(auth, credentials)
+      service = Google::Apis::GmailV1::GmailService.new
+      service.authorization = credentials
+      response = service.list_user_labels("me")
+      labels = Array(response.labels).map { |l| { "id" => l.id, "name" => l.name } }
+      auth.update!(labels: labels)
+    rescue StandardError => e
+      Rails.logger.error("[OauthCallback] label fetch failed: #{e.class} #{e.message}")
     end
 
     def fetch_gmail_email(credentials)

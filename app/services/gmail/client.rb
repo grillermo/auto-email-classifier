@@ -11,19 +11,21 @@ module Gmail
     MAX_RESULTS_LIMIT = 500
 
     SYSTEM_LABELS = %w[
+      CATEGORY_FORUMS
+      CATEGORY_PERSONAL
+      CATEGORY_PROMOTIONS
+      CATEGORY_SOCIAL
+      CATEGORY_UPDATES
+      CHAT
+      DRAFT
+      IMPORTANT
       INBOX
+      SENT
       SPAM
+      STARRED
       TRASH
       UNREAD
-      STARRED
-      IMPORTANT
-      SENT
-      DRAFT
-      CATEGORY_PERSONAL
-      CATEGORY_SOCIAL
-      CATEGORY_PROMOTIONS
-      CATEGORY_UPDATES
-      CATEGORY_FORUMS
+      YELLOW_STAR
     ].freeze
 
     def self.for_authentication(gmail_authentication)
@@ -43,6 +45,18 @@ module Gmail
 
     def profile
       service.get_user_profile(user_id)
+    end
+
+    def list_labels
+      response = service.list_user_labels(user_id)
+      Array(response.labels).filter_map do |label|
+        next if Gmail::Client::SYSTEM_LABELS.include?(label.id)
+
+        {
+          "id" => label.id,
+          "name" => label.name
+        }
+      end
     end
 
     def list_message_ids(query:, max_results: 100)

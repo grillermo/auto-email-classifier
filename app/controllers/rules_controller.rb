@@ -135,6 +135,7 @@ class RulesController < ApplicationController
         actions: serialize_actions_for_edit(definition[:actions])
       },
       actionScripts: Rules::ActionScripts.available_scripts,
+      gmailLabels: gmail_label_names_for_user,
       updateUrl: rule_path(rule),
       deleteUrl: rule_path(rule),
       backUrl: rules_path,
@@ -196,6 +197,10 @@ class RulesController < ApplicationController
       type: "mark_read",
       label: ""
     }]
+  end
+
+  def gmail_label_names_for_user
+    current_user.gmail_authentications.flat_map { |a| Array(a.labels).map { |l| l["name"] } }.uniq.sort
   end
 
   def normalize_condition_field(value)
