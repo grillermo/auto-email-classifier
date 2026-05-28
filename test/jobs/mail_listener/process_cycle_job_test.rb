@@ -29,19 +29,43 @@ module MailListener
       assert_includes processed, "gmail@example.com"
     end
 
-    test "skips needs_reauth accounts" do
+    test "does not run CycleProcessor for needs_reauth accounts" do
       @auth.update!(status: :needs_reauth)
       processed = []
       fake_processor = ->(**) {
         processed << true
         Object.new.tap { |obj| obj.define_singleton_method(:process!) {} }
       }
+      fake_reauth = Object.new.tap { |obj| obj.define_singleton_method(:call) {} }
 
-      stub_method(CycleProcessor, :new, fake_processor) do
-        ProcessCycleJob.new.perform
+      stub_method(Gmail::ReAuthenticateGmail, :new, ->(**) { fake_reauth }) do
+        stub_method(CycleProcessor, :new, fake_processor) do
+          ProcessCycleJob.new.perform
+        end
       end
 
       assert_empty processed
+    end
+
+    test "attempts reauth even when other accounts are active" do
+      stuck = GmailAuthentication.create!(
+        user: @user, email: "stuck@gmail.com",
+        access_token: "tok", refresh_token: "ref", status: :needs_reauth
+      )
+      fake_processor = ->(**) { Object.new.tap { |obj| obj.define_singleton_method(:process!) {} } }
+      reauth_args = nil
+      fake_reauth = Object.new.tap { |obj| obj.define_singleton_method(:call) {} }
+
+      stub_method(Gmail::ReAuthenticateGmail, :new, ->(authentications:) {
+        reauth_args = authentications.map(&:email)
+        fake_reauth
+      }) do
+        stub_method(CycleProcessor, :new, fake_processor) do
+          ProcessCycleJob.new.perform
+        end
+      end
+
+      assert_includes reauth_args, "stuck@gmail.com"
     end
 
     test "continues processing remaining accounts when one raises" do

@@ -32,7 +32,55 @@ module Gmail
       assert_equal "new-access", @auth.access_token
     end
 
+    test "ensure_credentials! skips refresh when token is well within expiry window" do
+      fetched = false
+      creds = Object.new.tap do |obj|
+        obj.define_singleton_method(:fetch_access_token!) { fetched = true }
+        obj.define_singleton_method(:access_token) { "old-access" }
+        obj.define_singleton_method(:expires_at) { 1.hour.from_now }
+      end
+
+      OauthManager.stub_any_instance(:build_credentials, creds) do
+        OauthManager.new(gmail_authentication: @auth).ensure_credentials!
+      end
+
+      refute fetched, "expected fetch_access_token! to be skipped for fresh token"
+    end
+
+    test "ensure_credentials! refreshes when token expires within buffer" do
+      @auth.update!(token_expires_at: 1.minute.from_now)
+      fetched = false
+      creds = Object.new.tap do |obj|
+        obj.define_singleton_method(:fetch_access_token!) { fetched = true }
+        obj.define_singleton_method(:access_token) { "new-access" }
+        obj.define_singleton_method(:expires_at) { 1.hour.from_now }
+      end
+
+      OauthManager.stub_any_instance(:build_credentials, creds) do
+        OauthManager.new(gmail_authentication: @auth).ensure_credentials!
+      end
+
+      assert fetched
+    end
+
+    test "ensure_credentials! refreshes when token_expires_at is nil" do
+      @auth.update!(token_expires_at: nil)
+      fetched = false
+      creds = Object.new.tap do |obj|
+        obj.define_singleton_method(:fetch_access_token!) { fetched = true }
+        obj.define_singleton_method(:access_token) { "new-access" }
+        obj.define_singleton_method(:expires_at) { 1.hour.from_now }
+      end
+
+      OauthManager.stub_any_instance(:build_credentials, creds) do
+        OauthManager.new(gmail_authentication: @auth).ensure_credentials!
+      end
+
+      assert fetched
+    end
+
     test "ensure_credentials! marks needs_reauth on AuthorizationError" do
+      @auth.update!(token_expires_at: 1.minute.from_now)
       error_creds = Object.new.tap do |obj|
         obj.define_singleton_method(:fetch_access_token!) { raise Signet::AuthorizationError.new("revoked") }
       end
@@ -46,6 +94,7 @@ module Gmail
     end
 
     test "ensure_credentials! sends ntfy notification on auth error when channel configured" do
+      @auth.update!(token_expires_at: 1.minute.from_now)
       @user.create_ntfy_channel!(channel: "test-topic", server_url: "https://ntfy.sh")
       error_creds = Object.new.tap do |obj|
         obj.define_singleton_method(:fetch_access_token!) { raise Signet::AuthorizationError.new("revoked") }

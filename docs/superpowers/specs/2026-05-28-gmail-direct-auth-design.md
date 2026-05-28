@@ -9,7 +9,7 @@ Replace devise-passwordless magic-link sign-in with Google OAuth via `omniauth-g
 
 ## Data Migration
 
-1. Export all active rules to `db/seeds.rb` (one `Rule.create!` per rule, no user FK — caller supplies user after fresh sign-in).
+1. Export all active rules to `db/seeds.rb` (one `Rule.create!` per rule, hardcode user_id=1).
 2. Truncation migration: `TRUNCATE users, gmail_authentications, rules, rule_applications, auto_rule_events, ntfy_channels RESTART IDENTITY CASCADE`. Safe because app is pre-production.
 3. Add `provider` (string) and `uid` (string) columns to `users`. Unique index on `[provider, uid]`.
 
@@ -58,7 +58,7 @@ Add:
 config.omniauth :google_oauth2,
   ENV.fetch("GOOGLE_CLIENT_ID"),
   ENV.fetch("GOOGLE_CLIENT_SECRET"),
-  scope: "openid,email,profile,https://www.googleapis.com/auth/gmail.modify",
+  scope: "openid,email,profile,#{Gmail::Authorization::SCOPE}",  # reuse existing SCOPE constant
   access_type: "offline",
   prompt: "consent"
 ```

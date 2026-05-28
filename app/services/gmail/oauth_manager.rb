@@ -3,6 +3,7 @@
 module Gmail
   class OauthManager
     SCOPE = Gmail::Authorization::SCOPE
+    REFRESH_BUFFER = 5.minutes
 
     def initialize(
       gmail_authentication:,
@@ -16,7 +17,7 @@ module Gmail
 
     def ensure_credentials!
       credentials = build_credentials
-      credentials.fetch_access_token!
+      credentials.fetch_access_token! if refresh_needed?
 
       gmail_authentication.update!(
         access_token: credentials.access_token,
@@ -46,6 +47,13 @@ module Gmail
     private
 
     attr_reader :gmail_authentication, :client_id, :client_secret
+
+    def refresh_needed?
+      expires_at = gmail_authentication.token_expires_at
+      gmail_authentication.access_token.blank? ||
+        expires_at.nil? ||
+        expires_at < Time.current + REFRESH_BUFFER
+    end
 
     def build_credentials
       Google::Auth::UserRefreshCredentials.new(

@@ -5,12 +5,16 @@ module MailListener
     queue_as :default
 
     def perform
+      needs_reauth = GmailAuthentication.status_needs_reauth.includes(user: :ntfy_channel)
+      if needs_reauth.any?
+        Gmail::ReAuthenticateGmail.new(authentications: needs_reauth).call
+      end
+
       auths = GmailAuthentication.status_active.includes(user: :ntfy_channel)
 
       if auths.empty?
-        puts("[ProcessCycleJob] no active gmail_authentications, skipping")
+        puts("[ProcessCycleJob] no active gmail_authentications, skipping") if needs_reauth.empty?
         return
-      end
 
       puts("[ProcessCycleJob] processing #{auths.count} active account(s)")
 

@@ -10,7 +10,7 @@ module Gmail
       url = authorizer.get_authorization_url(
         login_hint: current_user.email
       )
-      redirect_to url, allow_other_host: true
+      redirect_to append_consent_prompt(url), allow_other_host: true
     end
 
     def create
@@ -73,6 +73,14 @@ module Gmail
       service = Google::Apis::GmailV1::GmailService.new
       service.authorization = credentials
       service.get_user_profile("me").email_address
+    end
+
+    def append_consent_prompt(url)
+      uri = URI.parse(url)
+      params = URI.decode_www_form(uri.query || "")
+      params << ["prompt", "consent"]
+      uri.query = URI.encode_www_form(params)
+      uri.to_s
     end
 
     def oauth_callback_url
