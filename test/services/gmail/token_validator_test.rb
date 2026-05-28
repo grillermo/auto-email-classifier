@@ -25,6 +25,7 @@ module Gmail
     end
 
     test "returns needs_reauth when token refresh fails" do
+      @auth.update!(token_expires_at: 1.minute.from_now)  # within refresh buffer, triggers refresh
       error_creds = Object.new.tap do |obj|
         obj.define_singleton_method(:fetch_access_token!) { raise Signet::AuthorizationError.new("revoked") }
       end

@@ -15,6 +15,7 @@ module MailListener
       if auths.empty?
         puts("[ProcessCycleJob] no active gmail_authentications, skipping") if needs_reauth.empty?
         return
+      end
 
       puts("[ProcessCycleJob] processing #{auths.count} active account(s)")
 

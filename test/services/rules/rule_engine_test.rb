@@ -126,7 +126,7 @@ class RulesRuleEngineTest < ActiveSupport::TestCase
   end
 
   test "stops at the first matching rule and does not evaluate later rules" do
-    rule_one = create_rule(name: "First", value: "billing@", actions: [{ type: "mark_read" }])
+    rule_one = create_rule(name: "First", value: "billing@example.com", actions: [{ type: "mark_read" }])
     rule_two = create_rule(name: "Second", value: "billing@", actions: [{ type: "trash" }])
 
     gmail_client = Class.new do

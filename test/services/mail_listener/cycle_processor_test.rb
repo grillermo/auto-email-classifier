@@ -120,9 +120,6 @@ class MailListenerCycleProcessorTest < ActiveSupport::TestCase
           MailListener::CycleProcessor.new(gmail_authentication: @gmail_auth).process!
         end
       end
-    ensure
-      HTTP.define_singleton_method(:post, &original_post)
-      ENV.delete("NTFY_CHANNEL")
     end
 
     assert ntfy_called, "Expected HTTP.post to be called for ntfy notification"
@@ -144,8 +141,6 @@ class MailListenerCycleProcessorTest < ActiveSupport::TestCase
           MailListener::CycleProcessor.new(gmail_authentication: @gmail_auth).process!
         end
       end
-    ensure
-      HTTP.define_singleton_method(:post, &original_post)
     end
 
     assert_not ntfy_called

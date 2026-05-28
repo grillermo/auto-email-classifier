@@ -91,8 +91,6 @@ class RulesAutoRulesCreatorTest < ActiveSupport::TestCase
           end
         end
       end
-    ensure
-      Rules::OneOffApplier.define_singleton_method(:new, &original_new)
     end
 
     assert_equal 1, result[:created]

@@ -110,7 +110,7 @@ class GmailAuthenticationsTest < ActionDispatch::IntegrationTest
       end
     end
 
-    assert_redirected_to "https://accounts.google.com/o/oauth2/auth"
+    assert_redirected_to "https://accounts.google.com/o/oauth2/auth?prompt=consent"
     assert_equal fake_client_id, captured_authorizer_init[:args][0]
     assert_equal "https://auto-email-classifier.chiq.me/gmail/oauth/callback", captured_authorizer_init[:kwargs][:callback_uri]
     assert_equal @user.email, captured_authorize_args[:login_hint]
