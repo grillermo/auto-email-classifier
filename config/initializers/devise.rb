@@ -270,7 +270,4 @@ Devise.setup do |config|
   # config.responder.error_status = :unprocessable_entity
   # config.responder.redirect_status = :see_other
 
-  # ==> devise-passwordless config
-  # Time after which the magic link expires.
-  config.passwordless_login_within = 15.minutes
 end
