@@ -50,4 +50,70 @@ class GmailAuthenticationTest < ActiveSupport::TestCase
     # Model returns decrypted value
     assert_equal "secret-access", auth.reload.access_token
   end
+
+  # --- upsert_from_google tests ---
+
+  require "omniauth"
+
+  def google_auth(email: "user@gmail.com", uid: "g-uid-1", refresh_token: "ref-tok")
+    OmniAuth::AuthHash.new(
+      provider: "google_oauth2",
+      uid: uid,
+      info: { email: email },
+      credentials: OmniAuth::AuthHash.new(
+        token: "access-tok",
+        refresh_token: refresh_token,
+        expires_at: 1.hour.from_now.to_i
+      )
+    )
+  end
+
+  test "upsert_from_google creates new GmailAuthentication" do
+    user = User.create!(email: "user@gmail.com", provider: "google_oauth2", uid: "g-uid-1")
+    auth = google_auth
+
+    stub_method(GmailAuthentication, :fetch_and_store_labels, nil) do
+      assert_difference "GmailAuthentication.count", 1 do
+        ga = GmailAuthentication.upsert_from_google(user: user, auth: auth)
+        assert ga.persisted?
+        assert_equal "user@gmail.com", ga.email
+        assert_equal "access-tok", ga.access_token
+        assert_equal "ref-tok", ga.refresh_token
+        assert ga.status_active?
+      end
+    end
+  end
+
+  test "upsert_from_google updates existing GmailAuthentication with fresh tokens" do
+    user = User.create!(email: "user@gmail.com", provider: "google_oauth2", uid: "g-uid-1")
+    user.gmail_authentications.create!(
+      email: "user@gmail.com",
+      access_token: "old-access",
+      refresh_token: "old-refresh"
+    )
+
+    auth = google_auth(refresh_token: "new-refresh")
+    stub_method(GmailAuthentication, :fetch_and_store_labels, nil) do
+      assert_no_difference "GmailAuthentication.count" do
+        ga = GmailAuthentication.upsert_from_google(user: user, auth: auth)
+        assert_equal "access-tok", ga.access_token
+        assert_equal "new-refresh", ga.refresh_token
+      end
+    end
+  end
+
+  test "upsert_from_google does not overwrite refresh_token when omitted" do
+    user = User.create!(email: "user@gmail.com", provider: "google_oauth2", uid: "g-uid-1")
+    user.gmail_authentications.create!(
+      email: "user@gmail.com",
+      access_token: "old-access",
+      refresh_token: "keep-this"
+    )
+
+    auth = google_auth(refresh_token: nil)
+    stub_method(GmailAuthentication, :fetch_and_store_labels, nil) do
+      ga = GmailAuthentication.upsert_from_google(user: user, auth: auth)
+      assert_equal "keep-this", ga.refresh_token
+    end
+  end
 end
