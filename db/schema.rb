@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_22_231949) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_28_223349) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -218,9 +218,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_22_231949) do
     t.string "email", default: "", null: false
     t.datetime "last_sign_in_at"
     t.string "last_sign_in_ip"
+    t.string "provider"
     t.integer "sign_in_count", default: 0, null: false
+    t.string "uid"
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["provider", "uid"], name: "index_users_on_provider_and_uid", unique: true, where: "((provider IS NOT NULL) AND (uid IS NOT NULL))"
   end
 
   add_foreign_key "auto_rule_events", "rules", column: "created_rule_id"
