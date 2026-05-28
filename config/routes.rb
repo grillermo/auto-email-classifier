@@ -1,20 +1,16 @@
 Rails.application.routes.draw do
-  # devise-passwordless automatically mounts the magic link confirmation route
-  # (GET /users/magic_link?user[token]=...) via :magic_link_authenticatable.
-  # This generates the `user_magic_link_url` route helper used by the mailer.
   devise_for :users,
-    controllers: { sessions: "users/sessions" },
-    skip: [:registrations, :passwords, :confirmations, :unlocks, :omniauth_callbacks]
+    controllers: { omniauth_callbacks: "users/omniauth_callbacks" },
+    skip: [:registrations, :passwords, :confirmations, :unlocks, :sessions]
 
   devise_scope :user do
-    get "/users/magic_link",
-      to: "devise/passwordless/magic_links#show",
-      as: "user_magic_link"
+    get  "sign_in",  to: "devise/sessions#new",     as: :new_user_session
+    delete "sign_out", to: "devise/sessions#destroy", as: :destroy_user_session
   end
 
   resources :gmail_authentications, only: [:new]
 
-  # Gmail OAuth
+  # Gmail OAuth — used for adding secondary accounts post sign-in
   scope "/gmail/oauth" do
     get  "authorize", to: "gmail/oauth_callback#new",    as: :gmail_oauth_authorize
     get  "callback",  to: "gmail/oauth_callback#create", as: :gmail_oauth_callback
