@@ -30,5 +30,5 @@ Rails.application.routes.draw do
     end
   end
 
-  root "rules#index"
+  root "pages#home"
 end
