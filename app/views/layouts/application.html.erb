@@ -95,6 +95,13 @@
             <a href="/" class="text-on-surface font-semibold border-b-2 border-on-surface pb-1 text-sm">Rules</a>
             <a href="<%= new_gmail_authentication_path %>" class="text-on-surface-variant hover:text-on-surface font-semibold text-sm transition-colors duration-200">Add Gmail Auth</a>
           </nav>
+          <%= button_to destroy_user_session_path,
+            method: :delete,
+            class: "ml-auto inline-flex items-center gap-2 text-on-surface-variant hover:text-on-surface font-bold px-4 py-2 rounded-xl hover:bg-surface-container transition-colors text-sm",
+            form: { class: "ml-auto" } do %>
+            <span class="material-symbols-outlined text-xl">logout</span>
+            Log Out
+          <% end %>
         <% end %>
       </div>
     </header>
