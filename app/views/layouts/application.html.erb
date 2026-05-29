@@ -107,6 +107,8 @@
             <span class="material-symbols-outlined text-xl">logout</span>
             Log Out
           <% end %>
+        <% elsif request.path == new_user_session_path %>
+          <a href="<%= privacy_path %>" class="ml-auto text-on-surface-variant hover:text-on-surface font-semibold text-sm transition-colors duration-200">Privacy Policy</a>
         <% end %>
       </div>
     </header>
