@@ -20,6 +20,7 @@ Rails.application.routes.draw do
   get "terms-of-service", to: "pages#terms_of_service", as: :terms_of_service
 
   get "up" => "rails/health#show", as: :rails_health_check
+  get "health" => "health#show", as: :health_check
   get "health/test_google_credentials", to: "health#test_google_credentials"
   get "health/oauth_debug", to: "health#oauth_debug"
 

@@ -2,7 +2,43 @@ require "test_helper"
 
 class HealthTest < ActionDispatch::IntegrationTest
   setup do
+    host! "auto-email-classifier.chiq.me"
     @user = User.create!(email: "test@example.com")
+  end
+
+  test "health returns ok when every dependency is operational" do
+    get "/health"
+
+    assert_response :success
+
+    payload = JSON.parse(response.body)
+    assert_equal true, payload["ok"]
+    assert_equal true, payload.dig("checks", "database", "ok")
+  end
+
+  test "health returns service unavailable when a dependency fails" do
+    get "/health"
+
+    assert_response :service_unavailable
+
+    payload = JSON.parse(response.body)
+    assert_equal false, payload["ok"]
+    assert_equal true, payload.dig("checks", "database", "ok")
+  end
+
+  test "health includes attached service checks" do
+    queue_configuration = Struct.new(:name).new("queue")
+
+    HealthController.stub_any_instance(:attached_database_configurations, [ queue_configuration ]) do
+      HealthController.stub_any_instance(:check_database_configuration, true) do
+        get "/health"
+      end
+    end
+
+    assert_response :success
+
+    payload = JSON.parse(response.body)
+    assert_equal true, payload.dig("checks", "queue", "ok")
   end
 
   test "oauth_debug shows the callback url and oauth client configuration in use" do
