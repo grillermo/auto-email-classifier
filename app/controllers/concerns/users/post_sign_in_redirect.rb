@@ -10,7 +10,7 @@ module Users
       Gmail::TokenValidator.call(user: resource)
       return new_gmail_authentication_path if resource.gmail_authentications.none?
 
-      super
+      rules_path
     end
   end
 end

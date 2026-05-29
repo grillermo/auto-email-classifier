@@ -5,6 +5,7 @@ require "omniauth"
 
 class Users::OmniauthCallbacksControllerTest < ActionDispatch::IntegrationTest
   setup do
+    host! "auto-email-classifier.chiq.me"
     OmniAuth.config.test_mode = true
     # Ensure OmniAuth.config.path_prefix is set before the first request.
     # Devise sets it lazily when routes are drawn; force it here to avoid a
@@ -42,6 +43,7 @@ class Users::OmniauthCallbacksControllerTest < ActionDispatch::IntegrationTest
       end
     end
     assert_response :redirect
+    assert_redirected_to rules_path
     user = User.find_by(email: "new-user@gmail.com")
     assert user.present?
     assert_equal "google_oauth2", user.provider
@@ -64,6 +66,7 @@ class Users::OmniauthCallbacksControllerTest < ActionDispatch::IntegrationTest
       end
     end
     assert_response :redirect
+    assert_redirected_to rules_path
   end
 
   test "finds legacy user by email, backfills provider and uid" do
