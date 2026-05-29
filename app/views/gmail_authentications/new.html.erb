@@ -11,7 +11,9 @@
     </p>
 
     <div class="mt-8 flex flex-col sm:flex-row gap-3">
-      <%= link_to "Continue with Google", gmail_oauth_authorize_path, class: "inline-flex items-center justify-center bg-primary hover:bg-primary-dim text-on-primary font-semibold py-3 px-5 rounded-full transition-colors duration-200" %>
+      <%= google_oauth_link_to "Continue with Google",
+            gmail_oauth_authorize_path,
+            link_class: "h-12 min-w-[220px] px-4" %>
       <%= link_to "Skip for now", root_path, class: "inline-flex items-center justify-center border border-outline-variant text-on-surface font-semibold py-3 px-5 rounded-full transition-colors duration-200 hover:bg-surface-container-low" %>
     </div>
   </div>

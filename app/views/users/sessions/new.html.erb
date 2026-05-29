@@ -2,9 +2,9 @@
   <div class="bg-surface-container-lowest border border-outline-variant p-8 rounded-2xl shadow-sm text-center">
     <h2 class="text-2xl font-bold text-on-surface mb-2 font-headline">Sign in</h2>
     <p class="text-on-surface-variant mb-8 text-sm">Sign in with your Google account to connect Gmail and manage your rules.</p>
-    <%= button_to "Sign in with Google",
+    <%= google_oauth_button_to "Sign in with Google",
           user_google_oauth2_omniauth_authorize_path,
-          method: :post,
-          class: "w-full bg-primary hover:bg-primary-dim text-on-primary font-semibold py-3 px-4 rounded-full transition-colors duration-200 cursor-pointer" %>
+          button_class: "w-full",
+          form_class: "w-full" %>
   </div>
 </div>

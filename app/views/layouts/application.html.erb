@@ -91,7 +91,7 @@
     <% unless content_for?(:hide_app_header) %>
     <header class="bg-slate-50 sticky top-0 z-40 border-b border-surface-container">
       <div class="flex items-center w-full px-6 py-3 max-w-7xl mx-auto">
-        <a href="<%= root_path %>">
+        <a class="flex flex-row" href="<%= root_path %>">
           <%= image_tag 'logo.svg', class: "h-8 w-auto mr-2", alt: "" %>
           <span class="text-xl font-bold tracking-tight text-on-surface" style="font-family: Manrope, sans-serif;">Email Classifier</span>
         </a>
