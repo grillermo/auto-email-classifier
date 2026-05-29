@@ -21,7 +21,7 @@ function ActionsBadge({ count }) {
   );
 }
 
-export default function RulesIndex({ activeRules, inactiveRules, reorderUrl }) {
+export default function RulesIndex({ activeRules, inactiveRules, newRuleUrl, reorderUrl }) {
   const [activeRulesState, setActiveRulesState] = useState(activeRules);
   const [draggingRuleId, setDraggingRuleId] = useState(null);
   const [status, setStatus] = useState(null);
@@ -144,6 +144,13 @@ export default function RulesIndex({ activeRules, inactiveRules, reorderUrl }) {
             Rules are processed in the order displayed below. Drag to reprioritize.
           </p>
         </div>
+        <a
+          href={newRuleUrl}
+          className="inline-flex items-center gap-2 bg-primary text-on-primary font-bold px-5 py-3 rounded-xl shadow-sm hover:opacity-90 active:scale-95 transition-all"
+        >
+          <span className="material-symbols-outlined text-xl">add</span>
+          New Rule
+        </a>
       </div>
 
       {/* Active Rules */}

@@ -24,7 +24,7 @@ Rails.application.routes.draw do
   get "health/oauth_debug", to: "health#oauth_debug"
 
   post "rules/apply_all", to: "rules#apply_all"
-  resources :rules, only: %i[index edit update destroy] do
+  resources :rules, only: %i[index new create edit update destroy] do
     collection do
       patch :reorder
     end

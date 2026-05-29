@@ -111,7 +111,7 @@ export function useDeleteRuleForm({ deleteUrl }) {
   return { ...form, destroy };
 }
 
-export function useRulesForm({ rule, definition, updateUrl }) {
+export function useRulesForm({ rule, definition, updateUrl, submitMethod = "patch" }) {
   const form = useForm({
     name: rule.name || "",
     priority: rule.priority?.toString() || "1",
@@ -221,7 +221,11 @@ export function useRulesForm({ rule, definition, updateUrl }) {
       commit_action: commitAction,
     }));
 
-    form.patch(updateUrl, { preserveScroll: true });
+    if (submitMethod === "post") {
+      form.post(updateUrl, { preserveScroll: true });
+    } else {
+      form.patch(updateUrl, { preserveScroll: true });
+    }
   };
 
   return {

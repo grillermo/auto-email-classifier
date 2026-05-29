@@ -43,6 +43,7 @@ class RulesIndexTest < ActionDispatch::IntegrationTest
     assert_equal "Active Rule", active_rules.first["name"]
     assert_equal 1, active_rules.first["conditionsCount"]
     assert_equal 2, active_rules.first["actionsCount"]
+    assert_equal new_rule_path, payload.dig("props", "newRuleUrl")
 
     assert_equal 1, inactive_rules.length
     assert_equal "Inactive Rule", inactive_rules.first["name"]

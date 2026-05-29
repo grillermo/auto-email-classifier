@@ -36,6 +36,50 @@ class RulesEditTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "new renders a blank inertia edit page configured for create" do
+    get new_rule_path, headers: inertia_headers
+
+    assert_response :success
+
+    payload = JSON.parse(response.body)
+    assert_equal "Rules/Edit", payload["component"]
+    assert_equal "", payload.dig("props", "rule", "name")
+    assert_equal true, payload.dig("props", "rule", "active")
+    assert_equal 2, payload.dig("props", "rule", "priority")
+    assert_equal rules_path, payload.dig("props", "updateUrl")
+    assert_equal "post", payload.dig("props", "submitMethod")
+    assert_nil payload.dig("props", "deleteUrl")
+  end
+
+  test "successful inertia create redirects to the new rule edit page" do
+    post rules_path, params: valid_rule_params, headers: inertia_headers
+
+    created_rule = @user.rules.order(created_at: :desc).first
+
+    assert_response :conflict
+    assert_equal edit_rule_path(created_rule), response.headers["X-Inertia-Location"]
+    assert_equal "Updated rule", created_rule.name
+    assert_equal 2, created_rule.priority
+    assert_equal "updated@example.com", created_rule.conditions.first[:value]
+  end
+
+  test "invalid inertia create rerenders edit with errors" do
+    invalid_params = valid_rule_params.deep_dup
+    invalid_params[:rule][:name] = ""
+    invalid_params[:rule][:conditions_attributes] = [
+      { field: "sender", operator: "contains", value: "", case_sensitive: false }
+    ]
+
+    post rules_path, params: invalid_params, headers: inertia_headers
+
+    assert_response :unprocessable_entity
+
+    payload = JSON.parse(response.body)
+    assert_equal "Rules/Edit", payload["component"]
+    assert_equal "post", payload.dig("props", "submitMethod")
+    assert_includes payload.dig("props", "errorMessages"), "Name can't be blank"
+  end
+
   test "successful inertia update redirects with inertia location" do
     patch rule_path(@rule), params: valid_rule_params, headers: inertia_headers
 

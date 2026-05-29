@@ -35,13 +35,14 @@ export default function RulesEdit({
   actionScripts = [],
   gmailLabels = [],
   updateUrl,
+  submitMethod = "patch",
   deleteUrl,
   backUrl,
   previousRuleUrl = null,
   nextRuleUrl = null,
   errorMessages = [],
 }) {
-  const form = useRulesForm({ rule, definition, updateUrl });
+  const form = useRulesForm({ rule, definition, updateUrl, submitMethod });
   const deleteForm = useDeleteRuleForm({ deleteUrl });
   const combinedErrorMessages = [...errorMessages, ...flattenErrorMessages(form.errors)];
   const uniqueErrorMessages = Array.from(new Set(combinedErrorMessages.filter(Boolean)));
@@ -54,12 +55,14 @@ export default function RulesEdit({
 
   return (
     <>
-      <Head title={`Edit ${rule.name}`} />
+      <Head title={rule.id ? `Edit ${rule.name}` : "New Rule"} />
 
       {/* Page header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-on-surface">Rule Editor</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-on-surface">
+            {rule.id ? "Rule Editor" : "New Rule"}
+          </h1>
           <p className="text-on-surface-variant mt-1">
             Configure automated logic for your incoming messages.
           </p>
@@ -382,18 +385,20 @@ export default function RulesEdit({
                 </span>
               )}
             </div>
-            <button
-              type="button"
-              disabled={form.processing || deleteForm.processing}
-              onClick={() => {
-                if (confirm("Delete this rule?")) {
-                  deleteForm.destroy();
-                }
-              }}
-              className="text-error font-bold px-6 py-2.5 rounded-xl hover:bg-error-container transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              Delete
-            </button>
+            {deleteUrl ? (
+              <button
+                type="button"
+                disabled={form.processing || deleteForm.processing}
+                onClick={() => {
+                  if (confirm("Delete this rule?")) {
+                    deleteForm.destroy();
+                  }
+                }}
+                className="text-error font-bold px-6 py-2.5 rounded-xl hover:bg-error-container transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                Delete
+              </button>
+            ) : null}
             <button
               type="submit"
               form="rule-editor-form"

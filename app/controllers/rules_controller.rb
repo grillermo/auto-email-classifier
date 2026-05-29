@@ -10,12 +10,36 @@ class RulesController < ApplicationController
     render inertia: "Rules/Index", props: {
       activeRules: serialize_rules(active_rules),
       inactiveRules: serialize_rules(inactive_rules),
+      newRuleUrl: new_rule_path,
       reorderUrl: reorder_rules_path
     }
   end
 
+  def new
+    rule = current_user.rules.new(
+      name: "",
+      active: true,
+      priority: current_user.rules.maximum(:priority).to_i + 1
+    )
+
+    render inertia: "Rules/Edit", props: edit_props(rule)
+  end
+
   def edit
     render inertia: "Rules/Edit", props: edit_props(@rule)
+  end
+
+  def create
+    @rule = current_user.rules.new(permitted_rule_attributes)
+    @rule.definition = Rules::DefinitionBuilder.new(rule_params).build
+
+    if @rule.save
+      return apply_now if save_and_apply?
+
+      redirect_to_rule_with_flash(notice: "Rule created")
+    else
+      render inertia: "Rules/Edit", props: edit_props(@rule, error_messages: @rule.errors.full_messages), status: :unprocessable_entity
+    end
   end
 
   def update
@@ -136,11 +160,12 @@ class RulesController < ApplicationController
       },
       actionScripts: Rules::ActionScripts.available_scripts,
       gmailLabels: gmail_label_names_for_user,
-      updateUrl: rule_path(rule),
-      deleteUrl: rule_path(rule),
+      updateUrl: rule.persisted? ? rule_path(rule) : rules_path,
+      submitMethod: rule.persisted? ? "patch" : "post",
+      deleteUrl: rule.persisted? ? rule_path(rule) : nil,
       backUrl: rules_path,
-      previousRuleUrl: previous_rule ? edit_rule_path(previous_rule) : nil,
-      nextRuleUrl: next_rule ? edit_rule_path(next_rule) : nil,
+      previousRuleUrl: rule.persisted? && previous_rule ? edit_rule_path(previous_rule) : nil,
+      nextRuleUrl: rule.persisted? && next_rule ? edit_rule_path(next_rule) : nil,
       errorMessages: Array(error_messages)
     }
   end
