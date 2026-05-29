@@ -81,9 +81,7 @@
       h1, h2, h3 { font-family: 'Manrope', sans-serif; }
     </style>
 
-    <link rel="icon" href="/icon.png" type="image/png">
-    <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon.png">
+    <%= favicon_link_tag 'logo.svg', type: 'image/svg+xml' %>
 
     <%= stylesheet_link_tag :app %>
     <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
@@ -93,7 +91,10 @@
     <% unless content_for?(:hide_app_header) %>
     <header class="bg-slate-50 sticky top-0 z-40 border-b border-surface-container">
       <div class="flex items-center w-full px-6 py-3 max-w-7xl mx-auto">
-        <span class="text-xl font-bold tracking-tight text-on-surface" style="font-family: Manrope, sans-serif;">Email Classifier</span>
+        <a href="<%= root_path %>">
+          <%= image_tag 'logo.svg', class: "h-8 w-auto mr-2", alt: "" %>
+          <span class="text-xl font-bold tracking-tight text-on-surface" style="font-family: Manrope, sans-serif;">Email Classifier</span>
+        </a>
         <% if user_signed_in? %>
           <nav class="ml-8 flex items-center gap-6">
             <a href="<%= rules_path %>" class="text-on-surface font-semibold border-b-2 border-on-surface pb-1 text-sm">Rules</a>
