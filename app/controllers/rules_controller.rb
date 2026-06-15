@@ -137,6 +137,7 @@ class RulesController < ApplicationController
         conditionsCount: rule.conditions.size,
         actionsCount: rule.actions.size,
         editUrl: edit_rule_path(rule),
+        deleteUrl: rule_path(rule),
         applicationsCount: rule.rule_applications.size
       }
     end

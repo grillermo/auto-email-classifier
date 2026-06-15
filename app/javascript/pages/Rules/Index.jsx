@@ -21,6 +21,28 @@ function ActionsBadge({ count }) {
   );
 }
 
+function DeleteRuleButton({ deleteUrl, ruleName, csrfToken }) {
+  return (
+    <form
+      method="post"
+      action={deleteUrl}
+      onSubmit={(e) => {
+        if (!confirm(`Delete "${ruleName}"? This cannot be undone.`)) e.preventDefault();
+      }}
+    >
+      <input type="hidden" name="_method" value="delete" />
+      <input type="hidden" name="authenticity_token" value={csrfToken} />
+      <button
+        type="submit"
+        aria-label={`Delete ${ruleName}`}
+        className="inline-flex p-2 hover:bg-error-container rounded-lg text-on-surface-variant hover:text-error transition-all"
+      >
+        <span className="material-symbols-outlined text-xl">delete</span>
+      </button>
+    </form>
+  );
+}
+
 export default function RulesIndex({ activeRules, inactiveRules, newRuleUrl, reorderUrl }) {
   const [activeRulesState, setActiveRulesState] = useState(activeRules);
   const [draggingRuleId, setDraggingRuleId] = useState(null);
@@ -269,7 +291,7 @@ export default function RulesIndex({ activeRules, inactiveRules, newRuleUrl, reo
                     <td className="px-4 py-5 font-medium text-sm tabular-nums text-outline">
                       {rule.applicationsCount}
                     </td>
-                    <td className="pr-6 py-5 text-right space-x-1">
+                    <td className="flex pr-6 py-5 text-right space-x-1">
                       <a
                         href={rule.editUrl}
                         aria-label={`Edit ${rule.name}`}
@@ -277,6 +299,11 @@ export default function RulesIndex({ activeRules, inactiveRules, newRuleUrl, reo
                       >
                         <span className="material-symbols-outlined text-xl">edit</span>
                       </a>
+                      <DeleteRuleButton
+                        deleteUrl={rule.deleteUrl}
+                        ruleName={rule.name}
+                        csrfToken={csrfToken}
+                      />
                     </td>
                   </tr>
                 ))}
