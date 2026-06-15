@@ -53,7 +53,7 @@ class HealthController < ApplicationController
 
   def health_checks
     {
-      database: check_dependency { check_database_connection },
+      database: check_dependency { check_database_connection }
     }.merge(attached_service_checks)
   end
 
@@ -91,6 +91,7 @@ class HealthController < ApplicationController
     connection_class = Class.new(ActiveRecord::Base) do
       self.abstract_class = true
     end
+    connection_class.define_singleton_method(:name) { "HealthCheck#{configuration.name.camelize}Record" }
 
     connection_class.establish_connection(configuration.configuration_hash)
     connection_class.connection.execute("SELECT 1")

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_28_223349) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_15_185556) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -227,12 +227,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_28_223349) do
   end
 
   add_foreign_key "auto_rule_events", "rules", column: "created_rule_id"
-  add_foreign_key "auto_rule_events", "users"
-  add_foreign_key "gmail_authentications", "users"
-  add_foreign_key "ntfy_channels", "users"
+  add_foreign_key "auto_rule_events", "users", on_delete: :cascade
+  add_foreign_key "gmail_authentications", "users", on_delete: :cascade
+  add_foreign_key "ntfy_channels", "users", on_delete: :cascade
   add_foreign_key "rule_applications", "rules"
-  add_foreign_key "rule_applications", "users"
-  add_foreign_key "rules", "users"
+  add_foreign_key "rule_applications", "users", on_delete: :cascade
+  add_foreign_key "rules", "users", on_delete: :cascade
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade

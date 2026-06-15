@@ -14,16 +14,20 @@ class HealthTest < ActionDispatch::IntegrationTest
     payload = JSON.parse(response.body)
     assert_equal true, payload["ok"]
     assert_equal true, payload.dig("checks", "database", "ok")
+    assert_empty payload["checks"].values.flat_map { |check| check.keys & %w[error message] }
   end
 
   test "health returns service unavailable when a dependency fails" do
-    get "/health"
+    HealthController.stub_any_instance(:check_database_connection, -> { raise ActiveRecord::ConnectionNotEstablished, "database unavailable" }) do
+      get "/health"
+    end
 
     assert_response :service_unavailable
 
     payload = JSON.parse(response.body)
     assert_equal false, payload["ok"]
-    assert_equal true, payload.dig("checks", "database", "ok")
+    assert_equal false, payload.dig("checks", "database", "ok")
+    assert_equal "ActiveRecord::ConnectionNotEstablished", payload.dig("checks", "database", "error")
   end
 
   test "health includes attached service checks" do
