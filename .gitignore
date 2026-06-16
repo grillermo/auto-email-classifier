@@ -95,3 +95,6 @@ logs
 ‘.DS_Store’
 .DS_Store
 /docs/handoffs/
+.superpowers/
+.worktrees/
+project/
