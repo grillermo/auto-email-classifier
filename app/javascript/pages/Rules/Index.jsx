@@ -5,22 +5,6 @@ function withPriorities(rules) {
   return rules.map((rule, index) => ({ ...rule, priority: index + 1 }));
 }
 
-function FiltersBadge({ count }) {
-  return (
-    <span className="inline-flex items-center px-2 py-1 bg-surface-container-high rounded text-[11px] font-semibold text-on-surface">
-      {count} {count === 1 ? "Filter" : "Filters"}
-    </span>
-  );
-}
-
-function ActionsBadge({ count }) {
-  return (
-    <span className="inline-flex items-center px-2 py-1 bg-surface-container-high rounded text-[11px] font-semibold text-on-surface">
-      {count} {count === 1 ? "Action" : "Actions"}
-    </span>
-  );
-}
-
 function DeleteRuleButton({ deleteUrl, ruleName, csrfToken }) {
   return (
     <form
@@ -190,8 +174,6 @@ export default function RulesIndex({ activeRules, inactiveRules, newRuleUrl, reo
               <tr className="bg-surface-container-low text-on-surface-variant text-[11px] font-bold uppercase tracking-widest">
                 <th className="pl-6 py-4 w-12"></th>
                 <th className="px-4 py-4">Rule Name</th>
-                <th className="px-4 py-4">Conditions</th>
-                <th className="px-4 py-4">Actions</th>
                 <th className="px-4 py-4">Times Applied</th>
                 <th className="pr-6 py-4 text-right">Actions</th>
               </tr>
@@ -219,12 +201,6 @@ export default function RulesIndex({ activeRules, inactiveRules, newRuleUrl, reo
                   </td>
                   <td className="px-4 py-5">
                     <span className="font-bold text-on-surface text-sm">{rule.name}</span>
-                  </td>
-                  <td className="px-4 py-5">
-                    <FiltersBadge count={rule.conditionsCount} />
-                  </td>
-                  <td className="px-4 py-5">
-                    <ActionsBadge count={rule.actionsCount} />
                   </td>
                   <td className="px-4 py-5 font-medium text-sm tabular-nums text-on-surface-variant">
                     {rule.applicationsCount}
@@ -261,8 +237,6 @@ export default function RulesIndex({ activeRules, inactiveRules, newRuleUrl, reo
                 <tr className="text-on-surface-variant text-[11px] font-bold uppercase tracking-widest">
                   <th className="pl-6 py-4 w-12"></th>
                   <th className="px-4 py-4">Rule Name</th>
-                  <th className="px-4 py-4">Conditions</th>
-                  <th className="px-4 py-4">Actions</th>
                   <th className="px-4 py-4">Times Applied</th>
                   <th className="pr-6 py-4 text-right">Actions</th>
                 </tr>
@@ -276,16 +250,6 @@ export default function RulesIndex({ activeRules, inactiveRules, newRuleUrl, reo
                     <td className="px-4 py-5">
                       <span className="font-bold text-on-surface-variant text-sm italic">
                         {rule.name}
-                      </span>
-                    </td>
-                    <td className="px-4 py-5">
-                      <span className="inline-flex items-center px-2 py-1 bg-surface-container rounded text-[11px] font-medium text-outline">
-                        {rule.conditionsCount} {rule.conditionsCount === 1 ? "Filter" : "Filters"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-5">
-                      <span className="inline-flex items-center px-2 py-1 bg-surface-container rounded text-[11px] font-medium text-outline">
-                        {rule.actionsCount} {rule.actionsCount === 1 ? "Action" : "Actions"}
                       </span>
                     </td>
                     <td className="px-4 py-5 font-medium text-sm tabular-nums text-outline">
