@@ -237,7 +237,6 @@ export default function RulesIndex({ activeRules, inactiveRules, newRuleUrl, reo
                 <tr className="text-on-surface-variant text-[11px] font-bold uppercase tracking-widest">
                   <th className="pl-6 py-4 w-12"></th>
                   <th className="px-4 py-4">Rule Name</th>
-                  <th className="px-4 py-4">Times Applied</th>
                   <th className="pr-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -251,9 +250,6 @@ export default function RulesIndex({ activeRules, inactiveRules, newRuleUrl, reo
                       <span className="font-bold text-on-surface-variant text-sm italic">
                         {rule.name}
                       </span>
-                    </td>
-                    <td className="px-4 py-5 font-medium text-sm tabular-nums text-outline">
-                      {rule.applicationsCount}
                     </td>
                     <td className="flex pr-6 py-5 text-right space-x-1">
                       <a
