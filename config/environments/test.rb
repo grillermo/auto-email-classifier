@@ -40,4 +40,8 @@ Rails.application.configure do
 
   # Raise error when a before_action's only/except options reference missing actions.
   config.action_controller.raise_on_missing_callback_actions = true
+  # config.hosts is appended to in application.rb, which enables
+  # HostAuthorization in every environment. Integration tests drive requests
+  # as www.example.com, so leaving it set blocks them all with a 403.
+  config.hosts.clear
 end
