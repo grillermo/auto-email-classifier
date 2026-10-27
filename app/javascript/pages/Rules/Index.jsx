@@ -1,29 +1,26 @@
-import { Head } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
 import { useRef, useState } from "react";
 
 function withPriorities(rules) {
   return rules.map((rule, index) => ({ ...rule, priority: index + 1 }));
 }
 
-function DeleteRuleButton({ deleteUrl, ruleName, csrfToken }) {
+function DeleteRuleButton({ deleteUrl, ruleName }) {
+  const handleClick = () => {
+    if (!confirm(`Delete "${ruleName}"? This cannot be undone.`)) return;
+
+    router.delete(deleteUrl, { preserveScroll: true, preserveState: true });
+  };
+
   return (
-    <form
-      method="post"
-      action={deleteUrl}
-      onSubmit={(e) => {
-        if (!confirm(`Delete "${ruleName}"? This cannot be undone.`)) e.preventDefault();
-      }}
+    <button
+      type="button"
+      onClick={handleClick}
+      aria-label={`Delete ${ruleName}`}
+      className="inline-flex p-2 hover:bg-error-container rounded-lg text-on-surface-variant hover:text-error transition-all"
     >
-      <input type="hidden" name="_method" value="delete" />
-      <input type="hidden" name="authenticity_token" value={csrfToken} />
-      <button
-        type="submit"
-        aria-label={`Delete ${ruleName}`}
-        className="inline-flex p-2 hover:bg-error-container rounded-lg text-on-surface-variant hover:text-error transition-all"
-      >
-        <span className="material-symbols-outlined text-xl">delete</span>
-      </button>
-    </form>
+      <span className="material-symbols-outlined text-xl">delete</span>
+    </button>
   );
 }
 
@@ -262,7 +259,6 @@ export default function RulesIndex({ activeRules, inactiveRules, newRuleUrl, reo
                       <DeleteRuleButton
                         deleteUrl={rule.deleteUrl}
                         ruleName={rule.name}
-                        csrfToken={csrfToken}
                       />
                     </td>
                   </tr>
