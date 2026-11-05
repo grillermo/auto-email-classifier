@@ -49,9 +49,7 @@ module Gmail
 
     def list_labels
       response = service.list_user_labels(user_id)
-      Array(response.labels).filter_map do |label|
-        next if Gmail::Client::SYSTEM_LABELS.include?(label.id)
-
+      Array(response.labels).map do |label|
         {
           "id" => label.id,
           "name" => label.name
