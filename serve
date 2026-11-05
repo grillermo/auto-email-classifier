@@ -1,2 +1,24 @@
+#!/usr/bin/env bash
+# (Re)start auto-email-classifier on :3001 in tmux session
+# "auto-email-classifier", in place, and return. Run by
+# ~/c/server/after-reboot.sh at boot and by ./activate after git-sync lands
+# new code. Public at auto-email-classifier.chiq.me (Caddy :3000 -> :3001).
+set -euo pipefail
+APP_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$APP_DIR"
+# shellcheck disable=SC2034 # read by serve-in-place.sh
+SESSION=auto-email-classifier
+# shellcheck source=/dev/null
+. "$HOME/c/server/serve-in-place.sh"
+serve_require_clean_main
+serve_load_env
 export RAILS_ENV=production
-parallel --env RAILS_ENV --ungroup ::: "bin/jobs" "rails assets:precompile && rails s -p 3001"
+
+echo "==> bundle install";      bundle install --quiet
+echo "==> assets:precompile";   bin/rails assets:precompile
+echo "==> db:migrate";          bin/rails db:migrate
+
+serve_pane web 3001 "env RAILS_ENV=production bin/rails server -p 3001" /up
+serve_aux jobs "env RAILS_ENV=production bin/jobs"
+echo "==> auto-email-classifier: web $(serve_lan_url 3001)"
+serve_attach
