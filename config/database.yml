@@ -1,7 +1,9 @@
 default: &default
   adapter: postgresql
   encoding: unicode
-  pool: <%= ENV.fetch("RAILS_MAX_THREADS", 5) %>
+  # Puma threads plus Solid Queue's threads (worker, dispatcher, scheduler,
+  # heartbeats), which share this pool when it runs inside Puma (async mode).
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS", 5).to_i + 10 %>
   host: <%= ENV.fetch("DATABASE_HOST", "127.0.0.1") %>
   port: <%= ENV.fetch("DATABASE_PORT", 5432) %>
   username: <%= ENV.fetch("DATABASE_USER", "postgres") %>

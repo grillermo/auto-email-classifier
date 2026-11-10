@@ -18,7 +18,12 @@ echo "==> bundle install";      bundle install --quiet
 echo "==> assets:precompile";   bin/rails assets:precompile
 echo "==> db:migrate";          bin/rails db:migrate
 
-serve_pane web 3001 "env RAILS_ENV=production bin/rails server -p 3001" /up
-serve_aux jobs "env RAILS_ENV=production bin/jobs"
+# Solid Queue runs inside Puma as threads (async mode, see config/puma.rb).
+# Retire the old separate jobs pane if it is still running.
+serve_stop jobs
+# Tuned for RAM, not throughput: usually one person uses it at a time, so 2
+# Puma threads are plenty, and a lower GC heap growth factor stops Ruby from
+# reserving far more heap than it needs (default 1.8).
+serve_pane web 3001 "env RAILS_ENV=production SOLID_QUEUE_IN_PUMA=1 RAILS_MAX_THREADS=2 RUBY_GC_HEAP_GROWTH_FACTOR=1.1 bin/rails server -p 3001" /up
 echo "==> auto-email-classifier: web $(serve_lan_url 3001)"
 serve_attach
