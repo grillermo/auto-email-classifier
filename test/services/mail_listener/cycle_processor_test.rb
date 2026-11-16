@@ -68,6 +68,50 @@ class MailListenerCycleProcessorTest < ActiveSupport::TestCase
     assert RuleApplication.exists?(gmail_message_id: "msg-1", rule_id: rule.id)
   end
 
+  test "a message whose rule raises is skipped and the rest of the inbox is still processed" do
+    rule = create_rule
+    client = FakeGmailClient.new(
+      message_ids: ["msg-bad", "msg-good"],
+      messages: {
+        "msg-bad" => { id: "msg-bad", from: "billing@example.com", subject: "a", body: "" },
+        "msg-good" => { id: "msg-good", from: "billing@example.com", subject: "b", body: "" }
+      }
+    )
+    client.define_singleton_method(:mark_message_read) do |id|
+      raise Statements::RetryableError, "bank app down" if id == "msg-bad"
+
+      mark_read_ids << id
+    end
+
+    output = nil
+    stub_method(Gmail::Client, :for_authentication, client) do
+      output = capture_io { MailListener::CycleProcessor.new(gmail_authentication: @gmail_auth).process! }.first
+    end
+
+    assert_includes output, "message=msg-bad failed: Statements::RetryableError bank app down"
+    assert_not RuleApplication.exists?(gmail_message_id: "msg-bad", rule_id: rule.id)
+    assert RuleApplication.exists?(gmail_message_id: "msg-good", rule_id: rule.id)
+  end
+
+  test "an authorization error on one message still stops the cycle and notifies" do
+    @user.create_ntfy_channel!(channel: "test-channel", server_url: "https://ntfy.sh")
+    create_rule
+    client = FakeGmailClient.new(
+      message_ids: ["msg-1"],
+      messages: { "msg-1" => { id: "msg-1", from: "billing@example.com", subject: "a", body: "" } }
+    )
+    client.define_singleton_method(:mark_message_read) { |_id| raise "Authorization failed" }
+    ntfy_called = false
+
+    stub_method(Gmail::Client, :for_authentication, client) do
+      stub_method(HTTP, :post, ->(_url, **_opts) { ntfy_called = true }) do
+        capture_io { MailListener::CycleProcessor.new(gmail_authentication: @gmail_auth).process! }
+      end
+    end
+
+    assert ntfy_called
+  end
+
   test "dry_run mode does not create rule applications" do
     create_rule
     client = FakeGmailClient.new(

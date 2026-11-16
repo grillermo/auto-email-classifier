@@ -19,9 +19,7 @@ module MailListener
       puts "[listener] cycle failed: #{e.class} #{e.message}"
       puts e.backtrace.first(5).join("\n")
 
-      if e.class.name == "Google::Auth::AuthorizationError" || e.message.include?("Authorization failed")
-        send_auth_error_ntfy_notification
-      end
+      send_auth_error_ntfy_notification if authorization_error?(e)
     end
 
     private
@@ -39,13 +37,27 @@ module MailListener
       engine = Rules::RuleEngine.new(gmail_client: gmail_client, dry_run: dry_run?)
 
       message_ids.each do |message_id|
-        message = gmail_client.fetch_normalized_message(message_id)
-        result = engine.process_message!(message: message, rules_scope: rules)
-
-        next unless result[:matched]
-
-        log_rule_result(message_id: message_id, result: result)
+        process_message(engine: engine, message_id: message_id, rules: rules)
       end
+    end
+
+    # One message failing (a run_script action raising, say) is logged and
+    # skipped, so it doesn't hold up the rest of the inbox. Its rule is not
+    # recorded as applied, so the next cycle tries it again. Authorization
+    # errors still stop the cycle: every other message would fail the same way.
+    def process_message(engine:, message_id:, rules:)
+      message = gmail_client.fetch_normalized_message(message_id)
+      result = engine.process_message!(message: message, rules_scope: rules)
+
+      log_rule_result(message_id: message_id, result: result) if result[:matched]
+    rescue StandardError => e
+      raise if authorization_error?(e)
+
+      puts "[listener] message=#{message_id} failed: #{e.class} #{e.message}"
+    end
+
+    def authorization_error?(error)
+      error.class.name == "Google::Auth::AuthorizationError" || error.message.include?("Authorization failed")
     end
 
     def send_auth_error_ntfy_notification

@@ -96,3 +96,6 @@ logs
 .superpowers/
 .worktrees/
 project/
+
+# Bank statement passwords (see config/statement_passwords.example.rb)
+/config/statement_passwords.rb
